@@ -1,6 +1,6 @@
 add_executable(${PROJECT_NAME} main.c)
 
-list(APPEND BYTECODE "bytecode/chunk.h" "bytecode/chunk.c")
+list(APPEND BYTECODE "bytecode/chunk.h" "bytecode/chunk.c" "bytecode/value.h" "bytecode/value.c")
 list(APPEND UTILS "utils/memory.h" "utils/memory.c")
 list(APPEND DBG "bytecode/debug/debug.h" "bytecode/debug/debug.c")
 
