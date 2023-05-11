@@ -2,6 +2,7 @@
 
 #include "value.h"
 #include <common.h>
+#include <utils/array.h>
 
 typedef enum : byte
 {
@@ -11,10 +12,17 @@ typedef enum : byte
 
 typedef struct
 {
-    size_t        count;
-    size_t        capacity;
-    byte*         code;
-    u32*          lines;
+    size_t offset;
+    size_t line;
+} line_start_t;
+
+ARRAY(byte, chunk);
+ARRAY(line_start_t, line);
+
+typedef struct
+{
+    chunk_array_t code;
+    line_array_t  lines;
     value_array_t constants;
 } chunk_t;
 
