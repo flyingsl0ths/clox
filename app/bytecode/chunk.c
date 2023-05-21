@@ -32,10 +32,8 @@ void write_chunk(chunk_t* const instance, const byte data, const u32 line)
 
         instance->code.capacity = grow_capacity(old_capacity);
 
-        byte* const code = GROW_ARRAY(byte,
-                                      &instance->code.values,
-                                      instance->code.capacity,
-                                      instance->code.capacity);
+        byte* const code = GROW_ARRAY(
+            byte, instance->code.values, old_capacity, instance->code.capacity);
 
         instance->code.values = code;
     }
@@ -62,10 +60,9 @@ void write_chunk(chunk_t* const instance, const byte data, const u32 line)
         instance->lines.values = lines;
     }
 
-    const size_t line_count = ++instance->lines.count;
+    const size_t line_count = instance->lines.count++;
 
-    line_start_t* const line_start =
-        &(instance->lines.values[line_count - 1UL]);
+    line_start_t* const line_start = &(instance->lines.values[line_count]);
 
     line_start->offset = instance->code.count - 1;
     line_start->line   = line;
@@ -75,4 +72,24 @@ size_t add_constant(chunk_t* const instance, const value_t value)
 {
     append_value_array(&instance->constants, value);
     return instance->constants.count - 1;
+}
+
+size_t get_line(chunk_t const* const instance, const size_t instruction)
+{
+    size_t start = 0UL;
+    size_t end   = instance->lines.count - 1UL;
+
+    while (true)
+    {
+        size_t                    mid  = (start + end) / 2UL;
+        line_start_t const* const line = &instance->lines.values[mid];
+
+        if (instruction < line->offset) { end = mid - 1UL; }
+        else if (mid == instance->lines.count - 1UL ||
+                 instruction < instance->lines.values[mid + 1UL].offset)
+        {
+            return line->line;
+        }
+        else { start = mid + 1UL; }
+    }
 }

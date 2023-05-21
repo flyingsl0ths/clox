@@ -30,3 +30,4 @@ void   init_chunk(chunk_t* instance);
 void   free_chunk(chunk_t* instance);
 void   write_chunk(chunk_t* instance, byte data, u32 line);
 size_t add_constant(chunk_t* instance, value_t value);
+size_t get_line(chunk_t const* instance, size_t instruction);

@@ -13,7 +13,7 @@ size_t constant_instruction(const char* const    name,
                             const chunk_t* const chunk,
                             const size_t         offset)
 {
-    byte constant = chunk->code[offset + 1UL];
+    byte constant = chunk->code.values[offset + 1UL];
     printf("%-16s %4d '", name, constant);
     print_value(chunk->constants.values[constant]);
     puts("'");
@@ -25,7 +25,7 @@ void disassemble_chunk(chunk_t* const chunk, const char* const name)
     printf("== %s ==", name);
     puts("");
 
-    for (size_t offset = 0UL; offset < chunk->count;)
+    for (size_t offset = 0UL; offset < chunk->code.count;)
     {
         offset = disassemble_instruction(chunk, offset);
     }
@@ -35,13 +35,14 @@ size_t disassemble_instruction(chunk_t* const chunk, const size_t offset)
 {
     printf("%04zu", offset);
 
-    if (offset > 0UL && chunk->lines[offset] == chunk->lines[offset - 1UL])
+    const size_t line = get_line(chunk, offset);
+    if (offset > 0UL && line == get_line(chunk, offset - 1UL))
     {
-        puts("   | ");
+        printf("   | ");
     }
-    else { printf("%4d ", chunk->lines[offset]); }
+    else { printf("%4zu ", line); }
 
-    const byte instruction = chunk->code[offset];
+    const byte instruction = chunk->code.values[offset];
 
     switch (instruction)
     {
