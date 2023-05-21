@@ -18,11 +18,11 @@ project(
   ${NAME}
   VERSION 1.0.0
   DESCRIPTION ${DESCRIPTION}
-  LANGUAGES C
-)
+  LANGUAGES C)
 
 add_library(compile-options INTERFACE)
 
-target_compile_options(compile-options INTERFACE "-Wextra;-Wall;-Werror;-Wunused-local-typedefs")
+target_compile_options(
+  compile-options INTERFACE "-Wextra;-Wall;-Werror;-Wunused-local-typedefs")
 
 add_subdirectory(app)
