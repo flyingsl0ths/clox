@@ -12,3 +12,5 @@ target_sources(${PROJECT_NAME} PRIVATE common.h "${BYTECODE}" "${VM}"
 target_include_directories(${PROJECT_NAME} PUBLIC "${PROJECT_SOURCE_DIR}/app")
 
 target_compile_features(${PROJECT_NAME} PRIVATE c_std_99)
+target_compile_definitions(${PROJECT_NAME}
+                           PRIVATE $<$<CONFIG:Debug>:DEBUG_TRACE_EXECUTION>)

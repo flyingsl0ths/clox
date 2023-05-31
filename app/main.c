@@ -3,9 +3,12 @@
 #include "bytecode/chunk.h"
 #include "bytecode/debug/debug.h"
 #include "common.h"
+#include "vm/vm.h"
 
 int main()
 {
+    vm_t vm = init_vm();
+
     chunk_t chunk;
     init_chunk(&chunk);
 
