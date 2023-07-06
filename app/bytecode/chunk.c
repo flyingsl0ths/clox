@@ -3,90 +3,90 @@
 
 ARRAY_INIT(line)
 
-void init_chunk(chunk_t* const instance)
+void init_chunk(chunk_t* const self)
 {
-    instance->code.count    = 0;
-    instance->code.capacity = 0;
-    instance->code.values   = NULL;
+    self->code.count    = 0;
+    self->code.capacity = 0;
+    self->code.values   = NULL;
 
-    init_line_array(&instance->lines);
+    init_line_array(&self->lines);
 
-    init_value_array(&instance->constants);
+    init_value_array(&self->constants);
 }
 
-void free_chunk(chunk_t* const instance)
+void free_chunk(chunk_t* const self)
 {
 
-    FREE_ARRAY(byte, instance->code.values, instance->code.capacity);
-    FREE_ARRAY(u32, instance->lines.values, instance->lines.capacity);
-    free_value_array(&instance->constants);
-    init_chunk(instance);
+    FREE_ARRAY(byte, self->code.values, self->code.capacity);
+    FREE_ARRAY(u32, self->lines.values, self->lines.capacity);
+    free_value_array(&self->constants);
+    init_chunk(self);
 }
 
-void write_chunk(chunk_t* const instance, const byte data, const u32 line)
+void write_chunk(chunk_t* const self, const byte data, const u32 line)
 {
 
-    if (instance->code.capacity < instance->code.count + 1)
+    if (self->code.capacity < self->code.count + 1)
     {
-        const size_t old_capacity = instance->code.capacity;
+        const size_t old_capacity = self->code.capacity;
 
-        instance->code.capacity = grow_capacity(old_capacity);
+        self->code.capacity = grow_capacity(old_capacity);
 
         byte* const code = GROW_ARRAY(
-            byte, instance->code.values, old_capacity, instance->code.capacity);
+            byte, self->code.values, old_capacity, self->code.capacity);
 
-        instance->code.values = code;
+        self->code.values = code;
     }
 
-    instance->code.values[instance->code.count] = data;
-    ++instance->code.count;
+    self->code.values[self->code.count] = data;
+    ++self->code.count;
 
-    if (instance->lines.count > 0 &&
-        instance->lines.values[instance->lines.count - 1].line == line)
+    if (self->lines.count > 0 &&
+        self->lines.values[self->lines.count - 1].line == line)
     {
         return;
     }
 
-    if (instance->lines.capacity < instance->lines.count + 1)
+    if (self->lines.capacity < self->lines.count + 1)
     {
-        const size_t old_capacity = instance->lines.count;
-        instance->lines.capacity  = grow_capacity(old_capacity);
+        const size_t old_capacity = self->lines.count;
+        self->lines.capacity      = grow_capacity(old_capacity);
 
         line_start_t* const lines = GROW_ARRAY(line_start_t,
-                                               instance->lines.values,
+                                               self->lines.values,
                                                old_capacity,
-                                               instance->lines.capacity);
+                                               self->lines.capacity);
 
-        instance->lines.values = lines;
+        self->lines.values = lines;
     }
 
-    const size_t line_count = instance->lines.count++;
+    const size_t line_count = self->lines.count++;
 
-    line_start_t* const line_start = &(instance->lines.values[line_count]);
+    line_start_t* const line_start = &(self->lines.values[line_count]);
 
-    line_start->offset = instance->code.count - 1;
+    line_start->offset = self->code.count - 1;
     line_start->line   = line;
 }
 
-size_t add_constant(chunk_t* const instance, const value_t value)
+size_t add_constant(chunk_t* const self, const value_t value)
 {
-    append_value_array(&instance->constants, value);
-    return instance->constants.count - 1;
+    append_value_array(&self->constants, value);
+    return self->constants.count - 1;
 }
 
-size_t get_line(chunk_t const* const instance, const size_t instruction)
+size_t get_line(chunk_t const* const self, const size_t instruction)
 {
     size_t start = 0UL;
-    size_t end   = instance->lines.count - 1UL;
+    size_t end   = self->lines.count - 1UL;
 
     while (true)
     {
         size_t                    mid  = (start + end) / 2UL;
-        line_start_t const* const line = &instance->lines.values[mid];
+        line_start_t const* const line = &self->lines.values[mid];
 
         if (instruction < line->offset) { end = mid - 1UL; }
-        else if (mid == instance->lines.count - 1UL ||
-                 instruction < instance->lines.values[mid + 1UL].offset)
+        else if (mid == self->lines.count - 1UL ||
+                 instruction < self->lines.values[mid + 1UL].offset)
         {
             return line->line;
         }

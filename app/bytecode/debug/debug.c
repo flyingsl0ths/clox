@@ -13,7 +13,7 @@ size_t constant_instruction(const char* const    name,
                             const chunk_t* const chunk,
                             const size_t         offset)
 {
-    byte constant = chunk->code.values[offset + 1UL];
+    const byte constant = chunk->code.values[offset + 1UL];
     printf("%-16s %4d '", name, constant);
     print_value(chunk->constants.values[constant]);
     puts("'");
@@ -47,6 +47,11 @@ size_t disassemble_instruction(chunk_t* const chunk, const size_t offset)
     switch (instruction)
     {
         case OP_RETURN: return simple_instruction("OP_RETURN", offset);
+        case OP_NEGATE: return simple_instruction("OP_NEGATE", offset);
+        case OP_ADD: return simple_instruction("OP_ADD", offset);
+        case OP_SUBTRACT: return simple_instruction("OP_SUBTRACT", offset);
+        case OP_MULTIPLY: return simple_instruction("OP_MULTIPLY", offset);
+        case OP_DIVIDE: return simple_instruction("OP_DIVIDE", offset);
         case OP_CONSTANT:
             return constant_instruction("OP_CONSTANT", chunk, offset);
         default: printf("Unknown opcode %zu", offset); return offset + 1UL;

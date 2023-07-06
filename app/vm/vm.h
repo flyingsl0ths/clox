@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common.h"
 #include <bytecode/chunk.h>
 #include <bytecode/value.h>
 
@@ -19,7 +20,7 @@ typedef struct
 } vm_t;
 
 vm_t               init_vm();
-void               free_vm(vm_t* const instance);
-interpret_result_t interpret(vm_t* const instance, chunk_t* code);
-void               push(vm_t* const instance, value_t value);
-value_t            pop(vm_t* const instance);
+void               free_vm(vm_t* const self);
+interpret_result_t interpret(vm_t* const self, str source);
+void               push(vm_t* const self, value_t value);
+value_t            pop(vm_t* const self);

@@ -5,28 +5,36 @@
 
 ARRAY_INIT(value)
 
-void append_value_array(value_array_t* const instance, const value_t value)
+void append_value_array(value_array_t* const self, const value_t value)
 {
-    if (instance->capacity < instance->count + 1UL)
+    if (self->capacity < self->count + 1UL)
     {
-        const size_t old_capacity = instance->capacity;
+        const size_t old_capacity = self->capacity;
 
-        instance->capacity = grow_capacity(old_capacity);
+        self->capacity = grow_capacity(old_capacity);
 
-        value_t* const values = GROW_ARRAY(
-            value_t, instance->values, old_capacity, instance->capacity);
+        value_t* const values =
+            GROW_ARRAY(value_t, self->values, old_capacity, self->capacity);
 
-        instance->values = values;
+        self->values = values;
     }
 
-    instance->values[instance->count] = value;
-    ++instance->count;
+    self->values[self->count] = value;
+    ++self->count;
 }
 
-void free_value_array(value_array_t* const instance)
+void free_value_array(value_array_t* const self)
 {
-    FREE_ARRAY(value_t, instance->values, instance->capacity);
-    init_value_array(instance);
+    FREE_ARRAY(value_t, self->values, self->capacity);
+    init_value_array(self);
 }
 
-void print_value(const value_t instance) { printf("%g", instance); }
+void print_value(const value_t self) { printf("%g", self); }
+
+value_t add_values(value_t left, value_t right) { return left + right; }
+
+value_t sub_values(value_t left, value_t right) { return left - right; }
+
+value_t mul_values(value_t left, value_t right) { return left * right; }
+
+value_t div_values(value_t left, value_t right) { return left / right; }

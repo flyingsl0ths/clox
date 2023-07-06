@@ -1,26 +1,56 @@
 #include <stdio.h>
+#include <stdlib.h>
 
-#include "bytecode/chunk.h"
-#include "bytecode/debug/debug.h"
 #include "common.h"
+#include "utils/files.h"
 #include "vm/vm.h"
 
-int main()
+void repl(vm_t* const vm)
+{
+    char prompt[2056];
+    while (true)
+    {
+        printf("> ");
+        if (!fgets(prompt, sizeof(prompt), stdin))
+        {
+            puts("");
+            break;
+        }
+
+        interpret(vm, prompt);
+    }
+}
+
+void run_file(vm_t* const vm, str path)
+{
+    char* source = read_file(path);
+
+    if (!source)
+    {
+        fprintf(stderr, "Could not read file \"%s\".\n", path);
+        exit(74);
+    }
+
+    const interpret_result_t result = interpret(vm, source);
+
+    free(source);
+
+    if (result == INTERPRET_COMPILE_ERROR) exit(65);
+    if (result == INTERPRET_RUNTIME_ERROR) exit(70);
+}
+
+int main(int argc, const char** const argv)
 {
     vm_t vm = init_vm();
 
-    chunk_t chunk;
-    init_chunk(&chunk);
+    if (argc == 1) { repl(&vm); }
+    else if (argc == 2) { run_file(&vm, argv[1]); }
+    else
+    {
+        fprintf(stderr, "Usage: clox [path]");
+        exit(64);
+    }
 
-    size_t constant_added = add_constant(&chunk, 1.2);
-    write_chunk(&chunk, OP_CONSTANT, 123);
-    write_chunk(&chunk, constant_added, 123);
-
-    write_chunk(&chunk, OP_RETURN, 123);
-
-    disassemble_chunk(&chunk, "Test chunk");
-
-    free_chunk(&chunk);
-
+    free_vm(&vm);
     return 0;
 }
