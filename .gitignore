@@ -56,3 +56,7 @@ build
 compile_commands.json
 .vscode
 .cache
+
+# CLion
+.idea
+cmake-build-*
