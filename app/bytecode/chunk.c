@@ -1,7 +1,7 @@
 #include "chunk.h"
-#include <utils/memory.h>
+#include <utils/mem.h>
 
-ARRAY_INIT(line)
+ARRAY_INIT(line, line_start_t)
 
 void init_chunk(chunk_t* const self)
 {
@@ -9,18 +9,23 @@ void init_chunk(chunk_t* const self)
     self->code.capacity = 0;
     self->code.values   = NULL;
 
-    init_line_array(&self->lines);
+    init_line_array(&self->lines, 0);
 
-    init_value_array(&self->constants);
+    init_value_array(&self->constants, 0);
 }
+
+void free_line_array(line_array_t* const lines) { FREE_ARRAY(lines); }
 
 void free_chunk(chunk_t* const self)
 {
-
-    FREE_ARRAY(byte, self->code.values, self->code.capacity);
-    FREE_ARRAY(u32, self->lines.values, self->lines.capacity);
+    free_line_array(&self->lines);
     free_value_array(&self->constants);
-    init_chunk(self);
+}
+
+bool was_initialized(chunk_t* const self)
+{
+    return self->code.values == NULL && self->lines.values == NULL &&
+           self->constants.values == NULL;
 }
 
 void write_chunk(chunk_t* const self, const byte data, const u32 line)
@@ -30,12 +35,10 @@ void write_chunk(chunk_t* const self, const byte data, const u32 line)
     {
         const size_t old_capacity = self->code.capacity;
 
-        self->code.capacity = grow_capacity(old_capacity);
+        self->code.capacity       = grow_capacity(old_capacity);
 
-        byte* const code = GROW_ARRAY(
-            byte, self->code.values, old_capacity, self->code.capacity);
-
-        self->code.values = code;
+        self->code.values =
+            GROW_ARRAY(byte, self->code.values, self->code.capacity);
     }
 
     self->code.values[self->code.count] = data;
@@ -52,20 +55,16 @@ void write_chunk(chunk_t* const self, const byte data, const u32 line)
         const size_t old_capacity = self->lines.count;
         self->lines.capacity      = grow_capacity(old_capacity);
 
-        line_start_t* const lines = GROW_ARRAY(line_start_t,
-                                               self->lines.values,
-                                               old_capacity,
-                                               self->lines.capacity);
-
-        self->lines.values = lines;
+        self->lines.values =
+            GROW_ARRAY(line_start_t, self->lines.values, self->lines.capacity);
     }
 
-    const size_t line_count = self->lines.count++;
+    const size_t        line_count = self->lines.count++;
 
     line_start_t* const line_start = &(self->lines.values[line_count]);
 
-    line_start->offset = self->code.count - 1;
-    line_start->line   = line;
+    line_start->offset             = self->code.count - 1;
+    line_start->line               = line;
 }
 
 size_t add_constant(chunk_t* const self, const value_t value)
@@ -74,7 +73,7 @@ size_t add_constant(chunk_t* const self, const value_t value)
     return self->constants.count - 1;
 }
 
-size_t get_line(chunk_t const* const self, const size_t instruction)
+size_t get_line(chunk_t* const self, const size_t instruction)
 {
     size_t start = 0UL;
     size_t end   = self->lines.count - 1UL;

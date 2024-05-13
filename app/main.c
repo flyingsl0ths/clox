@@ -2,8 +2,8 @@
 #include <stdlib.h>
 
 #include "common.h"
-#include "utils/files.h"
-#include "vm/vm.h"
+#include <utils/files.h>
+#include <vm/vm.h>
 
 void repl(vm_t* const vm)
 {
@@ -11,13 +11,13 @@ void repl(vm_t* const vm)
     while (true)
     {
         printf("> ");
-        if (!fgets(prompt, sizeof(prompt), stdin))
-        {
-            puts("");
-            break;
-        }
+
+        if (!fgets(prompt, sizeof(prompt), stdin)) { break; }
+
+        if (prompt[0] == '\n') { continue; }
 
         interpret(vm, prompt);
+        puts("");
     }
 }
 
@@ -32,6 +32,7 @@ void run_file(vm_t* const vm, str path)
     }
 
     const interpret_result_t result = interpret(vm, source);
+    puts("");
 
     free(source);
 

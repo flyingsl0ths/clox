@@ -1,5 +1,6 @@
 #pragma once
 
 #include "common.h"
+#include <bytecode/chunk.h>
 
-void compile(str source);
+bool compile(str source, chunk_t* chunk);

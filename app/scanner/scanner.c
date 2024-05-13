@@ -31,19 +31,20 @@ token_t error_token(const scanner_t* const self, str message)
     return token;
 }
 
-char advance(scanner_t* const self)
+char advance_scanner(scanner_t* const self)
 {
     ++self->current;
     return self->current[-1];
 }
 
-void advance_(scanner_t* const self) { ++self->current; }
+void advance_scanner_(scanner_t* const self) { ++self->current; }
 
 bool match(scanner_t* const self, const char expected)
 {
-    if (is_at_end(self) || *self->current != expected) { return false; }
+    if (is_at_end(self)) { return false; }
+    if (*self->current != expected) { return false; }
 
-    advance_(self);
+    advance_scanner_(self);
 
     return true;
 }
@@ -63,11 +64,15 @@ void skip_whitespace(scanner_t* const self)
         {
             case ' ':
             case '\r':
-            case '\t': advance_(self); break;
+            case '\t':
+            {
+                advance_scanner_(self);
+                break;
+            }
             case '\n':
             {
                 ++self->line;
-                advance_(self);
+                advance_scanner_(self);
                 break;
             }
             case '/':
@@ -76,7 +81,7 @@ void skip_whitespace(scanner_t* const self)
                 {
                     while (peek(self) != '\n' && !is_at_end(self))
                     {
-                        advance_(self);
+                        advance_scanner_(self);
                     }
                 }
                 else { return; }
@@ -91,26 +96,26 @@ token_t string(scanner_t* const self)
     while (peek(self) != '"' && !is_at_end(self))
     {
         if (peek(self) == '\n') { ++self->line; }
-        advance_(self);
+        advance_scanner_(self);
     }
 
     if (is_at_end(self)) { return error_token(self, "Unterminated string."); }
 
     // The closing quotes
-    advance_(self);
+    advance_scanner_(self);
 
     return make_token(self, TOKEN_STRING);
 }
 
 token_t number(scanner_t* const self)
 {
-    while (is_digit(peek(self))) { advance_(self); }
+    while (is_digit(peek(self))) { advance_scanner_(self); }
 
     if (peek(self) == '.' && is_digit(peek_next(self)))
     {
-        advance_(self);
+        advance_scanner_(self);
 
-        while (is_digit(peek(self))) { advance_(self); }
+        while (is_digit(peek(self))) { advance_scanner_(self); }
     }
 
     return make_token(self, TOKEN_NUMBER);
@@ -119,7 +124,7 @@ token_t number(scanner_t* const self)
 token_type_t check_keyword(scanner_t* const   self,
                            const size_t       start,
                            const size_t       length,
-                           str                rest,
+                           str const          rest,
                            const token_type_t type)
 {
     const bool matches = self->current - self->start == start + length &&
@@ -142,8 +147,8 @@ token_type_t identifier_type(scanner_t* const self)
                 {
                     case 'a':
                         return check_keyword(self, 2, 3, "lse", TOKEN_FALSE);
-                    case 'o': return check_keyword(self, 2, 3, "r", TOKEN_FOR);
-                    case 'u': return check_keyword(self, 2, 3, "n", TOKEN_FUN);
+                    case 'o': return check_keyword(self, 2, 1, "r", TOKEN_FOR);
+                    case 'u': return check_keyword(self, 2, 1, "n", TOKEN_FUN);
                 }
             }
             break;
@@ -174,7 +179,10 @@ token_type_t identifier_type(scanner_t* const self)
 
 token_t identifier(scanner_t* const self)
 {
-    while (is_alpha(peek(self)) || is_digit(peek(self))) { advance_(self); }
+    while (is_alpha(peek(self)) || is_digit(peek(self)))
+    {
+        advance_scanner_(self);
+    }
 
     return make_token(self, identifier_type(self));
 }
@@ -194,7 +202,7 @@ token_t scan_token(scanner_t* const self)
 
     if (is_at_end(self)) { return make_token(self, TOKEN_EOF); }
 
-    const char c = advance(self);
+    const char c = advance_scanner(self);
 
     if (is_digit(c)) { return number(self); }
 
@@ -215,17 +223,18 @@ token_t scan_token(scanner_t* const self)
         case '*': return make_token(self, TOKEN_STAR);
         case '!':
             return make_token(self,
-                              match(self, '=' ? TOKEN_BANG_EQUAL : TOKEN_BANG));
+                              match(self, '=') ? TOKEN_BANG_EQUAL : TOKEN_BANG);
         case '=':
             return make_token(
-                self, match(self, '=' ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL));
+                self, match(self, '=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL);
         case '<':
             return make_token(self,
-                              match(self, '=' ? TOKEN_LESS_EQUAL : TOKEN_LESS));
+                              match(self, '=') ? TOKEN_LESS_EQUAL : TOKEN_LESS);
         case '>':
             return make_token(
-                self, match(self, '=' ? TOKEN_GREATER_EQUAL : TOKEN_GREATER));
+                self, match(self, '=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER);
         case '"': return string(self);
+        default: error_token(self, "Unexpected character.");
     }
 
     return error_token(self, "Unexpected character.");

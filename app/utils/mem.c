@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-#include "memory.h"
+#include "mem.h"
 
 size_t grow_capacity(const size_t capacity)
 {
