@@ -14,11 +14,14 @@ void init_chunk(chunk_t* const self)
     init_value_array(&self->constants, 0);
 }
 
-void free_line_array(line_array_t* const lines) { FREE_ARRAY(lines); }
-
 void free_chunk(chunk_t* const self)
 {
-    free_line_array(&self->lines);
+    chunk_array_t* const code  = &self->code;
+    line_array_t* const  lines = &self->lines;
+
+    FREE_ARRAY(code);
+    FREE_ARRAY(lines);
+
     free_value_array(&self->constants);
 }
 
