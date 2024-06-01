@@ -23,7 +23,7 @@ void repl(vm_t* const vm)
 
 void run_file(vm_t* const vm, str path)
 {
-    char* source = read_file(path);
+    char* const source = read_file(path);
 
     if (!source)
     {

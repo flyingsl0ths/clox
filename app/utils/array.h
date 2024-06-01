@@ -1,7 +1,6 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-#include "mem.h"
 #include <common.h>
 
 #define ARRAY(type, type_name)                                                 \
