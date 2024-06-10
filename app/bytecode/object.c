@@ -79,7 +79,7 @@ obj_string_t* strings_add(const value_t left, const value_t right)
 
 void free_string_object(object_t* const obj)
 {
-    obj_string_t* st = (obj_string_t*)obj;
+    obj_string_t* const st = (obj_string_t*)obj;
     free((void*)st->chars);
     st->chars  = NULL;
     st->length = 0;

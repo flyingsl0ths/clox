@@ -56,4 +56,4 @@ bool          strings_equal(value_t left, value_t right);
 
 obj_string_t* strings_add(value_t left, value_t right);
 
-void free_object(const value_t value);
+void          free_object(const value_t value);
