@@ -6,7 +6,7 @@
 #include "object.h"
 #include <utils/mem.h>
 
-object_t* allocate_object(usize size, const object_type_t type)
+object_t* allocate_object(const usize size, const object_type_t type)
 {
     object_t* const obj = (object_t*)reallocate(NULL, size);
     obj->type           = type;
@@ -16,22 +16,38 @@ object_t* allocate_object(usize size, const object_type_t type)
 #define ALLOCATE_OBJ(type, object_type)                                        \
     (type*)allocate_object(sizeof(type), object_type)
 
-obj_string_t* allocate_string(const char* const chars, usize length)
+obj_string_t*
+allocate_string(str const chars, const usize length, const uint32_t hash)
 {
     obj_string_t* const string = ALLOCATE_OBJ(obj_string_t, OBJ_STRING);
 
     string->length             = length;
     string->chars              = chars;
+    string->hash               = hash;
 
     return string;
 }
 
-obj_string_t* copy_string(const char* const chars, usize length)
+uint32_t hash_string(str const chars, const usize size)
 {
-    char* heap_chars = ALLOCATE(char, length - 1UL);
+    uint32_t hash = 2166136261u;
+
+    for (usize i = 0; i < size; ++i)
+    {
+        hash ^= (uint8_t)chars[i];
+        hash *= 16777619;
+    }
+
+    return hash;
+}
+
+obj_string_t* copy_string(str const chars, const usize length)
+{
+    const uint32_t hash       = hash_string(chars, length);
+    char*          heap_chars = ALLOCATE(char, length - 1UL);
     memcpy(heap_chars, chars, length);
     heap_chars[length] = '\0';
-    return allocate_string(heap_chars, length);
+    return allocate_string(heap_chars, length, hash);
 }
 
 void print_object(const value_t value)
@@ -42,7 +58,7 @@ void print_object(const value_t value)
     }
 }
 
-bool strings_equal(value_t left, value_t right)
+bool strings_equal(const value_t left, const value_t right)
 {
     const obj_string_t* const first  = as_string(left);
     const obj_string_t* const second = as_string(right);
@@ -51,9 +67,10 @@ bool strings_equal(value_t left, value_t right)
            (memcmp(first->chars, second->chars, first->length) == 0);
 }
 
-obj_string_t* take_string(char* chars, usize length)
+obj_string_t* take_string(str const chars, const usize length)
 {
-    return allocate_string(chars, length);
+    const uint32_t hash = hash_string(chars, length);
+    return allocate_string(chars, length, hash);
 }
 
 obj_string_t* strings_add(const value_t left, const value_t right)

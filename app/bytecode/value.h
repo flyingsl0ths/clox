@@ -5,8 +5,8 @@
 
 typedef enum
 {
-    VAL_BOOL,
     VAL_NIL,
+    VAL_BOOL,
     VAL_NUM,
     VAL_OBJ
 } value_type_t;
@@ -24,6 +24,8 @@ typedef struct
         object_t* obj;
     } as;
 } value_t;
+
+static const value_t NIL_VAL = {.type = VAL_NIL, .as = {.obj = NULL}};
 
 typedef value_t (*binary_operator_t)(const value_t, const value_t);
 

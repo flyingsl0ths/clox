@@ -19,7 +19,9 @@ list(
   "utils/mem.c"
   "utils/array.h"
   "utils/files.h"
-  "utils/files.c")
+  "utils/files.c"
+  "utils/table.h"
+  "utils/table.c")
 
 list(APPEND DBG "bytecode/debug/debug.h" "bytecode/debug/debug.c")
 

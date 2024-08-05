@@ -18,11 +18,12 @@ struct obj_string_t
     object_t    obj;
     usize       length;
     const char* chars;
+    uint32_t    hash;
 };
 
-obj_string_t*               copy_string(const char* chars, usize length);
+obj_string_t*               copy_string(str chars, const usize length);
 
-obj_string_t*               take_string(char* chars, usize length);
+obj_string_t*               take_string(str chars, const usize length);
 
 static inline object_type_t object_type(const value_t value)
 {
@@ -50,10 +51,10 @@ static inline const char* as_c_str(const value_t value)
     return ((obj_string_t*)as_obj(value))->chars;
 }
 
-void          print_object(value_t value);
+void          print_object(const value_t value);
 
-bool          strings_equal(value_t left, value_t right);
+bool          strings_equal(const value_t left, const value_t right);
 
-obj_string_t* strings_add(value_t left, value_t right);
+obj_string_t* strings_add(const value_t left, const value_t right);
 
 void          free_object(const value_t value);
