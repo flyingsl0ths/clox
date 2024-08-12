@@ -1,9 +1,7 @@
 #include "table.h"
-
-#include "bytecode/value.h"
-#include "common.h"
 #include "mem.h"
 #include <bytecode/object.h>
+#include <string.h>
 
 #define TABLE_MAX_LOAD 0.75
 
@@ -12,6 +10,7 @@ ARRAY_INIT(entry, entry_t)
 table_t init_table()
 {
     entry_array_t entries = {};
+
     init_entry_array(&entries, 0UL);
 
     const table_t instance = {.entries = entries};
@@ -24,8 +23,6 @@ void free_table(table_t* self)
     entry_array_t* const entries = &self->entries;
 
     FREE_ARRAY(entries)
-
-    *self = init_table();
 }
 
 entry_t* find_entry(entry_t* const      entries,
@@ -118,7 +115,7 @@ void table_add_all(table_t* const from, table_t* const to)
     }
 }
 
-value_t* table_get(table_t* const table, obj_string_t* const key)
+value_t* table_get(const table_t* const table, obj_string_t* const key)
 {
     if (table->entries.count == 0) return NULL;
 
@@ -141,4 +138,33 @@ bool table_delete(table_t* const table, obj_string_t* const key)
     entry->value = from_bool(true);
 
     return true;
+}
+
+obj_string_t* table_find_string(table_t* const table,
+                                str            chars,
+                                const usize    length,
+                                const u32      hash)
+{
+    if (table->entries.count == 0) return NULL;
+
+    u32 index = hash % table->entries.capacity;
+
+    while (true)
+    {
+        const entry_t* const entry = &table->entries.values[index];
+
+        if (entry->key == NULL)
+        {
+            // Stop if we find an empty non-tombstone entry.
+            if (is_nil(entry->value)) return NULL;
+        }
+        else if (entry->key->length == length && entry->key->hash == hash &&
+                 memcmp(entry->key->chars, chars, length) == 0)
+        {
+            // Found it.
+            return entry->key;
+        }
+
+        index = (index + 1) % table->entries.capacity;
+    }
 }

@@ -1,8 +1,6 @@
 #pragma once
 
 #include "value.h"
-#include <common.h>
-#include <utils/array.h>
 
 #define BYTE_MAX 255
 

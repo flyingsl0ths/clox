@@ -1,6 +1,5 @@
 #include <stdio.h>
 
-#include "common.h"
 #include "object.h"
 #include "value.h"
 #include <utils/mem.h>
@@ -22,16 +21,7 @@ void append_value_array(value_array_t* const self, const value_t value)
     ++self->count;
 }
 
-void free_value_array(value_array_t* const self)
-{
-    for (usize i = 0, total = self->count; i > total; ++i)
-    {
-        value_t value = self->values[i];
-        if (value.type == VAL_OBJ) { free_object(value); }
-    }
-
-    FREE_ARRAY(self)
-}
+void free_value_array(value_array_t* const self) { FREE_ARRAY(self) }
 
 void print_value(const value_t* const self)
 {
@@ -46,8 +36,6 @@ void print_value(const value_t* const self)
 }
 
 #define BINARY_EQ_OPERATION(op)                                                \
-    if (left.type != right.type) { return from_bool(false); }                  \
-                                                                               \
     switch (left.type)                                                         \
     {                                                                          \
         case VAL_BOOL: return from_bool(as_bool(left) op as_bool(right));      \
@@ -57,36 +45,80 @@ void print_value(const value_t* const self)
         default: return from_bool(false);                                      \
     }
 
-#define BINARY_ARITH_OPERATION(op)                                             \
-    if (left.type != right.type) { return from_bool(false); }                  \
-                                                                               \
-    switch (left.type)                                                         \
-    {                                                                          \
-        case VAL_BOOL: return from_number(as_bool(left) op as_bool(right));    \
-        case VAL_NIL: return from_bool(true);                                  \
-        case VAL_NUM: return from_number(as_number(left) op as_number(right)); \
-        case VAL_OBJ:                                                          \
-            return from_object((object_t*)strings_add(left, right));           \
-            break;                                                             \
-        default: return from_bool(false);                                      \
+#define BINARY_ARITH_OPERATION(op)
+
+value_t values_add(value_t         left,
+                   value_t         right,
+                   object_t* const objects,
+                   table_t* const  strings)
+{
+    switch (left.type)
+    {
+        case VAL_BOOL: return from_number(as_bool(left) + as_bool(right));
+        case VAL_NIL: return from_number(0);
+        case VAL_NUM: return from_number(as_number(left) + as_number(right));
+        case VAL_OBJ:
+            return from_object(
+                (object_t*)strings_add(left, right, objects, strings));
+        default: return from_bool(false);
     }
+}
 
-value_t values_add(const value_t left,
-                   const value_t right){BINARY_ARITH_OPERATION(+)}
+value_t values_sub(const value_t left, const value_t right)
+{
+    switch (left.type)
+    {
+        case VAL_NUM: return from_number(as_number(left) - as_number(right));
+        default: return from_bool(false);
+    }
+}
 
-value_t values_sub(const value_t left,
-                   const value_t right){BINARY_ARITH_OPERATION(-)}
+value_t values_multiply(const value_t left, const value_t right)
+{
+    switch (left.type)
+    {
+        case VAL_NUM: return from_number(as_number(left) * as_number(right));
+        default: return from_bool(false);
+    }
+}
 
-value_t values_multiply(const value_t left,
-                        const value_t right){BINARY_ARITH_OPERATION(*)}
+value_t values_divide(const value_t left, const value_t right)
+{
+    switch (left.type)
+    {
+        case VAL_NUM: return from_number(as_number(left) / as_number(right));
+        default: return from_bool(false);
+    }
+}
 
-value_t values_divide(const value_t left,
-                      const value_t right){BINARY_ARITH_OPERATION(/)}
-
-value_t values_equal(const value_t left,
-                     const value_t right){BINARY_EQ_OPERATION(==)}
+value_t values_equal(const value_t left, const value_t right)
+{
+    switch (left.type)
+    {
+        case VAL_BOOL: return from_bool(as_bool(left) == as_bool(right));
+        case VAL_NIL: return from_bool(true);
+        case VAL_NUM: return from_bool(as_number(left) == as_number(right));
+        case VAL_OBJ: return from_bool(as_obj(left) == as_obj(right)); break;
+        default: return from_bool(false);
+    }
+}
 
 value_t values_greater(const value_t left, const value_t right)
 {
-    BINARY_EQ_OPERATION(>)
+    switch (left.type)
+    {
+        case VAL_NUM: return from_bool(as_number(left) > as_number(right));
+        case VAL_OBJ: return from_bool(string_cmp(left, right) > 0); break;
+        default: return from_bool(false);
+    }
+}
+
+value_t values_less(const value_t left, const value_t right)
+{
+    switch (left.type)
+    {
+        case VAL_NUM: return from_bool(as_number(left) < as_number(right));
+        case VAL_OBJ: return from_bool(string_cmp(left, right) < 0); break;
+        default: return from_bool(false);
+    }
 }

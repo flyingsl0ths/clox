@@ -13,6 +13,7 @@ typedef enum
 
 typedef struct object_t     object_t;
 typedef struct obj_string_t obj_string_t;
+typedef struct table_t      table_t;
 
 typedef struct
 {
@@ -88,7 +89,10 @@ void    free_value_array(value_array_t* self);
 
 void    print_value(const value_t* const self);
 
-value_t values_add(value_t left, value_t right);
+value_t values_add(value_t         left,
+                   value_t         right,
+                   object_t* const objects,
+                   table_t* const  strings);
 
 value_t values_sub(value_t left, value_t right);
 
@@ -99,3 +103,5 @@ value_t values_divide(value_t left, value_t right);
 value_t values_equal(value_t left, value_t right);
 
 value_t values_greater(value_t left, value_t right);
+
+value_t values_less(const value_t left, const value_t right);

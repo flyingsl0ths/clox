@@ -3,9 +3,7 @@
 #include <stdlib.h>
 
 #include "vm.h"
-#include <bytecode/chunk.h>
 #include <bytecode/object.h>
-#include <bytecode/value.h>
 #include <compiler/compiler.h>
 
 #ifdef DEBUG_TRACE_EXECUTION
@@ -34,7 +32,7 @@ byte     read_byte(vm_t* const self) { return *(self->ip)++; }
 
 value_t* read_constant(vm_t* const self)
 {
-    return &self->chunk->constants.values[read_byte(self)];
+    return &self->chunk.constants.values[read_byte(self)];
 }
 
 void reset_stack(vm_t* const self) { self->stack_top = self->stack.values; }
@@ -48,8 +46,8 @@ void runtime_error(vm_t* const self, str format, ...)
     va_end(args);
     fputs("\n", stderr);
 
-    const usize instruction = self->ip - (self->chunk->code.values - 1);
-    const usize line        = self->chunk->lines.values[instruction].line;
+    const usize instruction = self->ip - (self->chunk.code.values - 1);
+    const usize line        = self->chunk.lines.values[instruction].line;
     fprintf(stderr, "[Line %zu] in script\n", line);
     reset_stack(self);
 }
@@ -59,26 +57,48 @@ vm_t init_vm()
     vm_t self;
 
     init_value_array(&self.stack, STACK_MAX);
+
     self.stack_top = self.stack.values;
+
+    self.objects   = NULL;
+
+    self.strings   = init_table();
 
     return self;
 }
 
+void free_objects(object_t* objects)
+{
+    object_t* object = objects;
+
+    while (object != NULL)
+    {
+        object_t* const next = object->next;
+        free_object(object);
+        object = next;
+    }
+}
+
 void free_vm(vm_t* const self)
 {
-    free_chunk(self->chunk);
+    free_chunk(&self->chunk);
 
     free_value_array(&self->stack);
 
-    self->chunk     = NULL;
     self->stack_top = NULL;
     self->ip        = NULL;
+
+    free_table(&self->strings);
+
+    free_objects(self->objects);
 }
 
 interpret_result_t ret(vm_t* const self)
 {
     const value_t value = pop(self);
+
     print_value(&value);
+
     return INTERPRET_OK;
 }
 
@@ -130,20 +150,53 @@ interpret_result_t negate(vm_t* const self)
     return INTERPRET_OK;
 }
 
-interpret_result_t run_binary_op(binary_operator_t const f, vm_t* const self)
+interpret_result_t ensure_types(vm_t* const        self,
+                                const value_type_t a,
+                                const value_type_t b,
+                                str                messages[2])
 {
-    const bool is_num =
-        !is_number(from_end(self, 0)) || is_number(from_end(self, 1));
+    const value_t left      = from_end(self, 0);
+    const value_t right     = from_end(self, 1);
 
-    const bool is_str =
-        !is_string(from_end(self, 0)) || is_string(from_end(self, 1));
+    const bool    is_first  = left.type == a && right.type == a;
+    const bool    is_second = left.type == b && right.type == b;
 
-    if (!is_num || !is_str)
+    if (!(is_first || is_second))
     {
-        runtime_error(self,
-                      !is_num ? "Operands must be numbers"
-                              : "Operands must be strings");
+        runtime_error(self, is_first ? messages[0] : messages[1]);
+        return INTERPRET_RUNTIME_ERROR;
+    }
 
+    return INTERPRET_OK;
+}
+
+interpret_result_t run_add_op(vm_t* const self)
+{
+    if (ensure_types(
+            self,
+            VAL_NUM,
+            VAL_OBJ,
+            (str[]){"Operands must be numbers", "Operands must be strings"}))
+    {
+        return INTERPRET_RUNTIME_ERROR;
+    }
+
+    const value_t b = pop(self);
+    const value_t a = pop(self);
+
+    push(self, values_add(a, b, self->objects, &self->strings));
+
+    return INTERPRET_OK;
+}
+
+interpret_result_t run_binary_op(vm_t* const self, binary_operator_t const f)
+{
+    if (ensure_types(
+            self,
+            VAL_NUM,
+            VAL_OBJ,
+            (str[]){"Operands must be numbers", "Operands must be strings"}))
+    {
         return INTERPRET_RUNTIME_ERROR;
     }
 
@@ -163,11 +216,7 @@ interpret_result_t divide(vm_t* const self)
         return INTERPRET_RUNTIME_ERROR;
     }
 
-    const interpret_result_t result = run_binary_op(values_divide, self);
-
-    if (result == INTERPRET_RUNTIME_ERROR) { return result; }
-
-    return result;
+    return run_binary_op(self, values_divide);
 }
 
 interpret_result_t run(vm_t* const self)
@@ -178,8 +227,8 @@ interpret_result_t run(vm_t* const self)
 #ifdef DEBUG_TRACE_EXECUTION
         print_stack(&self->stack);
 
-        disassemble_instruction(self->chunk,
-                                (size_t)(self->ip - self->chunk->code.values));
+        disassemble_instruction(&self->chunk,
+                                (size_t)(self->ip - self->chunk.code.values));
 #endif /* ifdef DEBUG_TRACE_EXECUTION */
 
         const byte instruction = read_byte(self);
@@ -196,29 +245,36 @@ interpret_result_t run(vm_t* const self)
             case OP_GREATER:
             {
                 const interpret_result_t result =
-                    run_binary_op(values_greater, self);
+                    run_binary_op(self, values_greater);
+                if (result == INTERPRET_RUNTIME_ERROR) { return result; }
+                break;
+            }
+
+            case OP_LESS:
+            {
+                const interpret_result_t result =
+                    run_binary_op(self, values_less);
                 if (result == INTERPRET_RUNTIME_ERROR) { return result; }
                 break;
             }
 
             case OP_ADD:
             {
-                const interpret_result_t result =
-                    run_binary_op(values_add, self);
+                const interpret_result_t result = run_add_op(self);
                 if (result == INTERPRET_RUNTIME_ERROR) { return result; }
                 break;
             }
             case OP_SUBTRACT:
             {
                 const interpret_result_t result =
-                    run_binary_op(values_sub, self);
+                    run_binary_op(self, values_sub);
                 if (result == INTERPRET_RUNTIME_ERROR) { return result; }
                 break;
             }
             case OP_MULTIPLY:
             {
                 const interpret_result_t result =
-                    run_binary_op(values_multiply, self);
+                    run_binary_op(self, values_multiply);
                 if (result == INTERPRET_RUNTIME_ERROR) { return result; }
                 break;
             }
@@ -246,7 +302,7 @@ interpret_result_t run(vm_t* const self)
 
 void reset_vm(vm_t* const self)
 {
-    free_chunk(self->chunk);
+    free_chunk(&self->chunk);
     self->ip          = NULL;
     self->stack_top   = self->stack.values;
     self->stack.count = 0UL;
@@ -258,14 +314,14 @@ interpret_result_t interpret(vm_t* const self, str source)
 
     init_chunk(&chunk);
 
-    if (!compile(source, &chunk))
+    if (!compile(source, &chunk, self->objects, &self->strings))
     {
         free_chunk(&chunk);
         return INTERPRET_COMPILE_ERROR;
     }
 
-    self->chunk                     = &chunk;
-    self->ip                        = self->chunk->code.values;
+    self->chunk                     = chunk;
+    self->ip                        = self->chunk.code.values;
 
     const interpret_result_t result = run(self);
 

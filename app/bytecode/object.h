@@ -1,6 +1,6 @@
 #pragma once
 
-#include <bytecode/value.h>
+#include "value.h"
 #include <common.h>
 
 typedef enum
@@ -10,7 +10,8 @@ typedef enum
 
 struct object_t
 {
-    object_type_t type;
+    object_type_t    type;
+    struct object_t* next;
 };
 
 struct obj_string_t
@@ -21,9 +22,15 @@ struct obj_string_t
     uint32_t    hash;
 };
 
-obj_string_t*               copy_string(str chars, const usize length);
+obj_string_t*               copy_string(str             chars,
+                                        const usize     length,
+                                        object_t* const objects,
+                                        table_t* const  strings);
 
-obj_string_t*               take_string(str chars, const usize length);
+obj_string_t*               take_string(char*           chars,
+                                        const usize     length,
+                                        object_t* const objects,
+                                        table_t* const  strings);
 
 static inline object_type_t object_type(const value_t value)
 {
@@ -53,8 +60,11 @@ static inline const char* as_c_str(const value_t value)
 
 void          print_object(const value_t value);
 
-bool          strings_equal(const value_t left, const value_t right);
+s32           string_cmp(const value_t left, const value_t right);
 
-obj_string_t* strings_add(const value_t left, const value_t right);
+obj_string_t* strings_add(const value_t   left,
+                          const value_t   right,
+                          object_t* const objects,
+                          table_t* const  strings);
 
-void          free_object(const value_t value);
+void          free_object(object_t* const object);

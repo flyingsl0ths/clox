@@ -1,9 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "bytecode/chunk.h"
-#include "bytecode/object.h"
-#include "compiler.h"
+#include <bytecode/object.h>
 #include <scanner/scanner.h>
 #include <scanner/token.h>
 #include <utils/array.h>
@@ -25,6 +23,8 @@ typedef struct
     parser_t       parser;
     scanner_t      scanner;
     chunk_t* const chunk;
+    object_t*      objects;
+    table_t*       strings;
 } compiler_t;
 
 typedef enum : u32
@@ -147,10 +147,12 @@ void num(compiler_t* const self)
 
 void strng(compiler_t* const self)
 {
-    emit_constant(self,
-                  from_object((object_t*)copy_string(
-                      self->parser.previous.start + 1,
-                      self->parser.previous.length - 2UL)));
+    emit_constant(
+        self,
+        from_object((object_t*)copy_string(self->parser.previous.start + 1,
+                                           self->parser.previous.length - 2UL,
+                                           self->objects,
+                                           self->strings)));
 }
 
 parser_rule_t get_rule(token_type_t type);
@@ -299,10 +301,16 @@ void literal(compiler_t* const self)
     }
 }
 
-bool compile(str const source, chunk_t* chunk)
+bool compile(str const       source,
+             chunk_t*        chunk,
+             object_t* const objects,
+             table_t* const  strings)
 {
-    compiler_t compiler = {
-        .parser = {}, .scanner = init_scanner(source), .chunk = chunk};
+    compiler_t compiler = {.parser  = {},
+                           .scanner = init_scanner(source),
+                           .chunk   = chunk,
+                           .objects = objects,
+                           .strings = strings};
 
     advance_compiler(&compiler);
 

@@ -33,7 +33,6 @@ bool was_initialized(chunk_t* const self)
 
 void write_chunk(chunk_t* const self, const byte data, const u32 line)
 {
-
     if (self->code.capacity < self->code.count + 1)
     {
         const size_t old_capacity = self->code.capacity;

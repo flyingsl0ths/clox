@@ -1,8 +1,7 @@
 #pragma once
 
-#include "common.h"
 #include <bytecode/chunk.h>
-#include <bytecode/value.h>
+#include <utils/table.h>
 
 typedef enum : byte
 {
@@ -13,10 +12,12 @@ typedef enum : byte
 
 typedef struct
 {
-    chunk_t*      chunk;
-    byte*         ip;
-    value_t*      stack_top;
-    value_array_t stack;
+    chunk_t        chunk;
+    byte*          ip;
+    value_t*       stack_top;
+    struct table_t strings;
+    object_t*      objects;
+    value_array_t  stack;
 } vm_t;
 
 vm_t               init_vm();
