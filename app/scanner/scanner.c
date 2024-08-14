@@ -2,16 +2,19 @@
 
 #include "scanner.h"
 
-bool is_digit(const char c) { return c >= '0' && c <= '9'; }
+static bool is_digit(const char c) { return c >= '0' && c <= '9'; }
 
-bool is_alpha(const char c)
+static bool is_alpha(const char c)
 {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
 }
 
-bool is_at_end(const scanner_t* const self) { return *self->current == '\0'; }
+static bool is_at_end(const scanner_t* const self)
+{
+    return *self->current == '\0';
+}
 
-token_t make_token(const scanner_t* const self, const token_type_t type)
+static token_t make_token(const scanner_t* const self, const token_type_t type)
 {
     const token_t token = {.type   = type,
                            .start  = self->start,
@@ -21,7 +24,7 @@ token_t make_token(const scanner_t* const self, const token_type_t type)
     return token;
 }
 
-token_t error_token(const scanner_t* const self, str message)
+static token_t error_token(const scanner_t* const self, str message)
 {
     const token_t token = {.type   = TOKEN_ERROR,
                            .start  = message,
@@ -31,15 +34,15 @@ token_t error_token(const scanner_t* const self, str message)
     return token;
 }
 
-char advance_scanner(scanner_t* const self)
+static char advance_scanner(scanner_t* const self)
 {
     ++self->current;
     return self->current[-1];
 }
 
-void advance_scanner_(scanner_t* const self) { ++self->current; }
+static void advance_scanner_(scanner_t* const self) { ++self->current; }
 
-bool match(scanner_t* const self, const char expected)
+static bool match(scanner_t* const self, const char expected)
 {
     if (is_at_end(self)) { return false; }
     if (*self->current != expected) { return false; }
@@ -49,14 +52,14 @@ bool match(scanner_t* const self, const char expected)
     return true;
 }
 
-char peek(const scanner_t* const self) { return *self->current; }
+static char peek(const scanner_t* const self) { return *self->current; }
 
-char peek_next(const scanner_t* const self)
+static char peek_next(const scanner_t* const self)
 {
     return is_at_end(self) ? '\0' : self->current[1UL];
 }
 
-void skip_whitespace(scanner_t* const self)
+static void skip_whitespace(scanner_t* const self)
 {
     while (true)
     {
@@ -91,7 +94,7 @@ void skip_whitespace(scanner_t* const self)
     }
 }
 
-token_t string(scanner_t* const self)
+static token_t string(scanner_t* const self)
 {
     while (peek(self) != '"' && !is_at_end(self))
     {
@@ -107,7 +110,7 @@ token_t string(scanner_t* const self)
     return make_token(self, TOKEN_STRING);
 }
 
-token_t number(scanner_t* const self)
+static token_t number(scanner_t* const self)
 {
     while (is_digit(peek(self))) { advance_scanner_(self); }
 
@@ -121,11 +124,11 @@ token_t number(scanner_t* const self)
     return make_token(self, TOKEN_NUMBER);
 }
 
-token_type_t check_keyword(scanner_t* const   self,
-                           const size_t       start,
-                           const size_t       length,
-                           str const          rest,
-                           const token_type_t type)
+static token_type_t check_keyword(scanner_t* const   self,
+                                  const size_t       start,
+                                  const size_t       length,
+                                  str const          rest,
+                                  const token_type_t type)
 {
     const bool matches = self->current - self->start == start + length &&
                          memcmp(self->start + start, rest, length) == 0;
@@ -133,7 +136,7 @@ token_type_t check_keyword(scanner_t* const   self,
     return matches ? type : TOKEN_IDENTIFIER;
 }
 
-token_type_t identifier_type(scanner_t* const self)
+static token_type_t identifier_type(scanner_t* const self)
 {
     switch (self->start[0])
     {
@@ -177,7 +180,7 @@ token_type_t identifier_type(scanner_t* const self)
     return TOKEN_IDENTIFIER;
 }
 
-token_t identifier(scanner_t* const self)
+static token_t identifier(scanner_t* const self)
 {
     while (is_alpha(peek(self)) || is_digit(peek(self)))
     {

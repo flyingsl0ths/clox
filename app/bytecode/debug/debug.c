@@ -3,16 +3,16 @@
 #include "bytecode/chunk.h"
 #include "debug.h"
 
-size_t simple_instruction(const char* const name, const size_t offset)
+static size_t simple_instruction(const char* const name, const size_t offset)
 {
     printf("%s", name);
     puts("");
     return offset + 1UL;
 }
 
-size_t constant_instruction(const char* const    name,
-                            const chunk_t* const chunk,
-                            const size_t         offset)
+static size_t constant_instruction(const char* const    name,
+                                   const chunk_t* const chunk,
+                                   const size_t         offset)
 {
     const byte constant = chunk->code.values[offset + 1UL];
     printf("%-16s %4d '", name, constant);

@@ -25,9 +25,9 @@ void free_table(table_t* self)
     FREE_ARRAY(entries)
 }
 
-entry_t* find_entry(entry_t* const      entries,
-                    const size_t        capacity,
-                    obj_string_t* const key)
+static entry_t* find_entry(entry_t* const      entries,
+                           const size_t        capacity,
+                           obj_string_t* const key)
 {
     u32      index     = key->hash % capacity;
 
@@ -50,7 +50,7 @@ entry_t* find_entry(entry_t* const      entries,
     }
 }
 
-void adjust_capacity(table_t* self, const usize capacity)
+static void adjust_capacity(table_t* self, const usize capacity)
 {
     entry_t* new_entries = ALLOCATE(entry_t, capacity);
 

@@ -52,7 +52,7 @@ typedef struct
 
 } parser_rule_t;
 
-void error_at(const token_t token, str message)
+static void error_at(const token_t token, str message)
 {
     fprintf(stderr, "[Line %zu] Error", token.line);
     if (token.type == TOKEN_EOF) { fprintf(stderr, " at end"); }
@@ -73,7 +73,7 @@ void error_at(const token_t token, str message)
     fprintf(stderr, ": %s\n", message);
 }
 
-void error(parser_t* const parser, str message, bool previous)
+static void error(parser_t* const parser, str message, bool previous)
 {
     if (!parser->panic_mode)
     {
@@ -83,7 +83,7 @@ void error(parser_t* const parser, str message, bool previous)
     parser->had_error = true;
 }
 
-void advance_compiler(compiler_t* const self)
+static void advance_compiler(compiler_t* const self)
 {
     self->parser.previous = self->parser.current;
 
@@ -95,7 +95,8 @@ void advance_compiler(compiler_t* const self)
     }
 }
 
-void consume(compiler_t* const self, const token_type_t type, str message)
+static void
+consume(compiler_t* const self, const token_type_t type, str message)
 {
     if (self->parser.current.type == type)
     {
@@ -106,20 +107,21 @@ void consume(compiler_t* const self, const token_type_t type, str message)
     error(&self->parser, message, false);
 }
 
-void emit_byte(compiler_t* const self, const byte byte, const size_t line)
+static void
+emit_byte(compiler_t* const self, const byte byte, const size_t line)
 {
     write_chunk(self->chunk, byte, line);
 }
 
-void emit_bytes(compiler_t* const self,
-                const byte        first_byte,
-                const byte        second_byte)
+static void emit_bytes(compiler_t* const self,
+                       const byte        first_byte,
+                       const byte        second_byte)
 {
     write_chunk(self->chunk, first_byte, self->parser.previous.line);
     write_chunk(self->chunk, second_byte, self->parser.previous.line);
 }
 
-byte make_constant(compiler_t* const self, const value_t value)
+static byte make_constant(compiler_t* const self, const value_t value)
 {
     const size_t constant = add_constant(self->chunk, value);
 
@@ -132,20 +134,20 @@ byte make_constant(compiler_t* const self, const value_t value)
     return (byte)constant;
 }
 
-void emit_constant(compiler_t* const self, const value_t value)
+static void emit_constant(compiler_t* const self, const value_t value)
 {
     const byte index = make_constant(self, value);
 
     emit_bytes(self, OP_CONSTANT, index);
 }
 
-void num(compiler_t* const self)
+static void number(compiler_t* const self)
 {
     const f64 value = strtod(self->parser.previous.start, NULL);
     emit_constant(self, from_number(value));
 }
 
-void strng(compiler_t* const self)
+static void string(compiler_t* const self)
 {
     emit_constant(
         self,
@@ -155,9 +157,10 @@ void strng(compiler_t* const self)
                                            self->strings)));
 }
 
-parser_rule_t get_rule(token_type_t type);
+static parser_rule_t get_rule(token_type_t type);
 
-void parse_precedence(compiler_t* const self, const precedence_t precedence)
+static void          parse_precedence(compiler_t* const  self,
+                                      const precedence_t precedence)
 {
     advance_compiler(self);
 
@@ -182,7 +185,7 @@ void parse_precedence(compiler_t* const self, const precedence_t precedence)
     }
 }
 
-void unary(compiler_t* const self)
+static void unary(compiler_t* const self)
 {
     const token_type_t operator_type = self->parser.previous.type;
     const size_t       line          = self->parser.previous.line;
@@ -197,22 +200,22 @@ void unary(compiler_t* const self)
     }
 }
 
-void expression(compiler_t* const self)
+static void expression(compiler_t* const self)
 {
     parse_precedence(self, PREC_ASSIGNMENT);
 }
 
-void grouping(compiler_t* const self)
+static void grouping(compiler_t* const self)
 {
     expression(self);
     consume(self, TOKEN_RIGHT_PAREN, "Expected ')' after expression.");
 }
 
-void          binary(compiler_t* self);
+static void          binary(compiler_t* self);
 
-void          literal(compiler_t* self);
+static void          literal(compiler_t* self);
 
-parser_rule_t get_rule(const token_type_t type)
+static parser_rule_t get_rule(const token_type_t type)
 {
     const static parser_rule_t rules[] = {
         [TOKEN_LEFT_PAREN]    = {grouping, NULL, PREC_NONE},
@@ -235,8 +238,8 @@ parser_rule_t get_rule(const token_type_t type)
         [TOKEN_LESS]          = {NULL, binary, PREC_COMPARISON},
         [TOKEN_LESS_EQUAL]    = {NULL, binary, PREC_COMPARISON},
         [TOKEN_IDENTIFIER]    = {NULL, NULL, PREC_NONE},
-        [TOKEN_STRING]        = {strng, NULL, PREC_NONE},
-        [TOKEN_NUMBER]        = {num, NULL, PREC_NONE},
+        [TOKEN_STRING]        = {string, NULL, PREC_NONE},
+        [TOKEN_NUMBER]        = {number, NULL, PREC_NONE},
         [TOKEN_AND]           = {NULL, NULL, PREC_NONE},
         [TOKEN_CLASS]         = {NULL, NULL, PREC_NONE},
         [TOKEN_ELSE]          = {NULL, NULL, PREC_NONE},

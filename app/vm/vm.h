@@ -23,5 +23,3 @@ typedef struct
 vm_t               init_vm();
 void               free_vm(vm_t* self);
 interpret_result_t interpret(vm_t* self, str source);
-void               push(vm_t* self, const value_t value);
-value_t            pop(vm_t* self);

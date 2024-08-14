@@ -6,7 +6,7 @@
 #include <utils/mem.h>
 #include <utils/table.h>
 
-void update_objects_ptr(object_t* objects, object_t* const obj)
+static void update_objects_ptr(object_t* objects, object_t* const obj)
 {
     if (objects == NULL) { objects = obj; }
     else
@@ -16,7 +16,7 @@ void update_objects_ptr(object_t* objects, object_t* const obj)
     }
 }
 
-object_t*
+static object_t*
 allocate_object(const usize size, const object_type_t type, object_t* objects)
 {
     object_t* const obj = (object_t*)reallocate(NULL, size);
@@ -31,11 +31,11 @@ allocate_object(const usize size, const object_type_t type, object_t* objects)
 #define ALLOCATE_OBJ(type, object_type, objects)                               \
     (type*)allocate_object(sizeof(type), object_type, objects)
 
-obj_string_t* allocate_string(str const       chars,
-                              const usize     length,
-                              const uint32_t  hash,
-                              object_t* const objects,
-                              table_t* const  strings)
+static obj_string_t* allocate_string(str const       chars,
+                                     const usize     length,
+                                     const uint32_t  hash,
+                                     object_t* const objects,
+                                     table_t* const  strings)
 {
     obj_string_t* const string =
         ALLOCATE_OBJ(obj_string_t, OBJ_STRING, objects);
@@ -49,7 +49,7 @@ obj_string_t* allocate_string(str const       chars,
     return string;
 }
 
-uint32_t hash_string(str const chars, const usize size)
+static uint32_t hash_string(str const chars, const usize size)
 {
     uint32_t hash = 2166136261u;
 
@@ -141,7 +141,7 @@ obj_string_t* strings_add(const value_t   left,
     return result;
 }
 
-void free_string_object(object_t* const obj)
+static void free_string_object(object_t* const obj)
 {
     obj_string_t* const st = (obj_string_t*)obj;
     free((void*)st->chars);

@@ -5,7 +5,7 @@
 #include <utils/files.h>
 #include <vm/vm.h>
 
-void repl(vm_t* const vm)
+static void repl(vm_t* const vm)
 {
     char prompt[2056];
     while (true)
@@ -21,7 +21,7 @@ void repl(vm_t* const vm)
     }
 }
 
-void run_file(vm_t* const vm, str path)
+static void run_file(vm_t* const vm, str path)
 {
     char* const source = read_file(path);
 
@@ -40,7 +40,7 @@ void run_file(vm_t* const vm, str path)
     if (result == INTERPRET_RUNTIME_ERROR) exit(70);
 }
 
-int main(int argc, const char** const argv)
+s32 main(const s32 argc, const char** const argv)
 {
     vm_t vm = init_vm();
 

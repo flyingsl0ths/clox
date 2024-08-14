@@ -9,7 +9,7 @@
 #ifdef DEBUG_TRACE_EXECUTION
 #include <bytecode/debug/debug.h>
 
-void print_stack(const value_array_t* const stack)
+static void print_stack(const value_array_t* const stack)
 {
     puts("          ");
 
@@ -28,16 +28,19 @@ void print_stack(const value_array_t* const stack)
 
 #define STACK_MAX 256UL
 
-byte     read_byte(vm_t* const self) { return *(self->ip)++; }
+static byte     read_byte(vm_t* const self) { return *(self->ip)++; }
 
-value_t* read_constant(vm_t* const self)
+static value_t* read_constant(vm_t* const self)
 {
     return &self->chunk.constants.values[read_byte(self)];
 }
 
-void reset_stack(vm_t* const self) { self->stack_top = self->stack.values; }
+static void reset_stack(vm_t* const self)
+{
+    self->stack_top = self->stack.values;
+}
 
-void runtime_error(vm_t* const self, str format, ...)
+static void runtime_error(vm_t* const self, str format, ...)
 {
     va_list args;
 
@@ -67,7 +70,7 @@ vm_t init_vm()
     return self;
 }
 
-void free_objects(object_t* objects)
+static void free_objects(object_t* objects)
 {
     object_t* object = objects;
 
@@ -93,7 +96,21 @@ void free_vm(vm_t* const self)
     free_objects(self->objects);
 }
 
-interpret_result_t ret(vm_t* const self)
+static void push(vm_t* const self, const value_t value)
+{
+    *self->stack_top = value;
+    ++self->stack_top;
+    ++self->stack.count;
+}
+
+static value_t pop(vm_t* const self)
+{
+    --self->stack_top;
+    --self->stack.count;
+    return *self->stack_top;
+}
+
+static interpret_result_t ret(vm_t* const self)
 {
     const value_t value = pop(self);
 
@@ -102,28 +119,28 @@ interpret_result_t ret(vm_t* const self)
     return INTERPRET_OK;
 }
 
-value_t from_end(vm_t* const self, const s32 distance)
+static value_t from_end(vm_t* const self, const s32 distance)
 {
     return self->stack_top[-1 - distance];
 }
 
-void negate_num(vm_t* const self)
+static void negate_num(vm_t* const self)
 {
     const value_t top = pop(self);
     push(self, from_number(-as_number(top)));
 }
 
-bool is_falsey(const value_t value)
+static bool is_falsey(const value_t value)
 {
     return is_nil(value) || (is_bool(value) || !as_bool(value));
 }
 
-void negate_bool(vm_t* const self)
+static void negate_bool(vm_t* const self)
 {
     push(self, from_bool(is_falsey(pop(self))));
 }
 
-void equality(vm_t* const self)
+static void equality(vm_t* const self)
 {
     const value_t right = pop(self);
     const value_t left  = pop(self);
@@ -131,13 +148,13 @@ void equality(vm_t* const self)
     push(self, values_equal(left, right));
 }
 
-void constant(vm_t* const self)
+static void constant(vm_t* const self)
 {
     const value_t* const value = read_constant(self);
     push(self, *value);
 }
 
-interpret_result_t negate(vm_t* const self)
+static interpret_result_t negate(vm_t* const self)
 {
     if (is_number(from_end(self, 0)))
     {
@@ -150,10 +167,10 @@ interpret_result_t negate(vm_t* const self)
     return INTERPRET_OK;
 }
 
-interpret_result_t ensure_types(vm_t* const        self,
-                                const value_type_t a,
-                                const value_type_t b,
-                                str                messages[2])
+static interpret_result_t ensure_types(vm_t* const        self,
+                                       const value_type_t a,
+                                       const value_type_t b,
+                                       str                messages[2])
 {
     const value_t left      = from_end(self, 0);
     const value_t right     = from_end(self, 1);
@@ -170,7 +187,7 @@ interpret_result_t ensure_types(vm_t* const        self,
     return INTERPRET_OK;
 }
 
-interpret_result_t run_add_op(vm_t* const self)
+static interpret_result_t run_add_op(vm_t* const self)
 {
     if (ensure_types(
             self,
@@ -189,7 +206,8 @@ interpret_result_t run_add_op(vm_t* const self)
     return INTERPRET_OK;
 }
 
-interpret_result_t run_binary_op(vm_t* const self, binary_operator_t const f)
+static interpret_result_t run_binary_op(vm_t* const             self,
+                                        binary_operator_t const f)
 {
     if (ensure_types(
             self,
@@ -208,7 +226,7 @@ interpret_result_t run_binary_op(vm_t* const self, binary_operator_t const f)
     return INTERPRET_OK;
 }
 
-interpret_result_t divide(vm_t* const self)
+static interpret_result_t divide(vm_t* const self)
 {
     if (is_zero(from_end(self, 0)))
     {
@@ -219,7 +237,7 @@ interpret_result_t divide(vm_t* const self)
     return run_binary_op(self, values_divide);
 }
 
-interpret_result_t run(vm_t* const self)
+static interpret_result_t run(vm_t* const self)
 {
     while (true)
     {
@@ -300,7 +318,7 @@ interpret_result_t run(vm_t* const self)
     }
 }
 
-void reset_vm(vm_t* const self)
+static void reset_vm(vm_t* const self)
 {
     free_chunk(&self->chunk);
     self->ip          = NULL;
@@ -328,18 +346,4 @@ interpret_result_t interpret(vm_t* const self, str source)
     reset_vm(self);
 
     return result;
-}
-
-void push(vm_t* const self, const value_t value)
-{
-    *self->stack_top = value;
-    ++self->stack_top;
-    ++self->stack.count;
-}
-
-value_t pop(vm_t* const self)
-{
-    --self->stack_top;
-    --self->stack.count;
-    return *self->stack_top;
 }
