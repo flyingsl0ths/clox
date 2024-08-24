@@ -161,9 +161,12 @@ static void number(compiler_t* const self)
 
 static void string(compiler_t* const self)
 {
+    // The +1 is to skip the first quote.
+    // The -2 is to remove the quotes from the string.
+    //  ""hello"" -> hello
     emit_constant(
         self,
-        from_object((object_t*)copy_string(self->parser.previous.start + 1,
+        from_object((object_t*)copy_string(self->parser.previous.start + 1UL,
                                            self->parser.previous.length - 2UL,
                                            self->objects,
                                            self->strings)));
