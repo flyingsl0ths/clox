@@ -31,16 +31,16 @@ bool was_initialized(chunk_t* const self)
            self->constants.values == NULL;
 }
 
-void write_chunk(chunk_t* const self, const byte data, const u32 line)
+void write_chunk(chunk_t* const self, const u8 data, const u32 line)
 {
     if (self->code.capacity < self->code.count + 1)
     {
-        const size_t old_capacity = self->code.capacity;
+        const usize old_capacity = self->code.capacity;
 
-        self->code.capacity       = grow_capacity(old_capacity);
+        self->code.capacity      = grow_capacity(old_capacity);
 
         self->code.values =
-            GROW_ARRAY(byte, self->code.values, self->code.capacity);
+            GROW_ARRAY(u8, self->code.values, self->code.capacity);
     }
 
     self->code.values[self->code.count] = data;
@@ -54,14 +54,14 @@ void write_chunk(chunk_t* const self, const byte data, const u32 line)
 
     if (self->lines.capacity < self->lines.count + 1)
     {
-        const size_t old_capacity = self->lines.count;
-        self->lines.capacity      = grow_capacity(old_capacity);
+        const usize old_capacity = self->lines.count;
+        self->lines.capacity     = grow_capacity(old_capacity);
 
         self->lines.values =
             GROW_ARRAY(line_start_t, self->lines.values, self->lines.capacity);
     }
 
-    const size_t        line_count = self->lines.count++;
+    const usize         line_count = self->lines.count++;
 
     line_start_t* const line_start = &(self->lines.values[line_count]);
 
@@ -69,20 +69,20 @@ void write_chunk(chunk_t* const self, const byte data, const u32 line)
     line_start->line               = line;
 }
 
-size_t add_constant(chunk_t* const self, const value_t value)
+usize add_constant(chunk_t* const self, const value_t value)
 {
     append_value_array(&self->constants, value);
     return self->constants.count - 1;
 }
 
-size_t get_line(chunk_t* const self, const size_t instruction)
+usize get_line(chunk_t* const self, const usize instruction)
 {
-    size_t start = 0UL;
-    size_t end   = self->lines.count - 1UL;
+    usize start = 0UL;
+    usize end   = self->lines.count - 1UL;
 
     while (true)
     {
-        size_t                    mid  = (start + end) / 2UL;
+        usize                     mid  = (start + end) / 2UL;
         line_start_t const* const line = &self->lines.values[mid];
 
         if (instruction < line->offset) { end = mid - 1UL; }

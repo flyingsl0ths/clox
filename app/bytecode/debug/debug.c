@@ -3,18 +3,18 @@
 #include "bytecode/chunk.h"
 #include "debug.h"
 
-static size_t simple_instruction(const char* const name, const size_t offset)
+static usize simple_instruction(const char* const name, const usize offset)
 {
     printf("%s", name);
     puts("");
     return offset + 1UL;
 }
 
-static size_t constant_instruction(const char* const    name,
-                                   const chunk_t* const chunk,
-                                   const size_t         offset)
+static usize constant_instruction(const char* const    name,
+                                  const chunk_t* const chunk,
+                                  const usize          offset)
 {
-    const byte constant = chunk->code.values[offset + 1UL];
+    const u8 constant = chunk->code.values[offset + 1UL];
     printf("%-16s %4d '", name, constant);
     print_value(&chunk->constants.values[constant]);
     puts("'");
@@ -26,24 +26,24 @@ void disassemble_chunk(chunk_t* const chunk, const char* const name)
     printf("== %s ==", name);
     puts("");
 
-    for (size_t offset = 0UL; offset < chunk->code.count;)
+    for (usize offset = 0UL; offset < chunk->code.count;)
     {
         offset = disassemble_instruction(chunk, offset);
     }
 }
 
-size_t disassemble_instruction(chunk_t* const chunk, const size_t offset)
+usize disassemble_instruction(chunk_t* const chunk, const usize offset)
 {
     printf("%04zu", offset);
 
-    const size_t line = get_line(chunk, offset);
+    const usize line = get_line(chunk, offset);
     if (offset > 0UL && line == get_line(chunk, offset - 1UL))
     {
         printf("   | ");
     }
     else { printf("%4zu ", line); }
 
-    const byte instruction = chunk->code.values[offset];
+    const u8 instruction = chunk->code.values[offset];
 
     switch (instruction)
     {

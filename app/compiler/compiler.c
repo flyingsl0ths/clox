@@ -63,7 +63,7 @@ static void error_at(const token_t token, str message)
     else
     {
         fprintf(stderr, " at '");
-        for (size_t i = 0, len = token.length; i < len; ++i)
+        for (usize i = 0, len = token.length; i < len; ++i)
         {
             fprintf(stderr, "%c", token.start[i]);
         }
@@ -107,23 +107,22 @@ consume(compiler_t* const self, const token_type_t type, str message)
     error(&self->parser, message, false);
 }
 
-static void
-emit_byte(compiler_t* const self, const byte byte, const size_t line)
+
+static void emit_byte(compiler_t* const self, const u8 byte, const usize line)
 {
     write_chunk(self->chunk, byte, line);
 }
 
-static void emit_bytes(compiler_t* const self,
-                       const byte        first_byte,
-                       const byte        second_byte)
+static void
+emit_bytes(compiler_t* const self, const u8 first_byte, const u8 second_byte)
 {
     write_chunk(self->chunk, first_byte, self->parser.previous.line);
     write_chunk(self->chunk, second_byte, self->parser.previous.line);
 }
 
-static byte make_constant(compiler_t* const self, const value_t value)
+static u8 make_constant(compiler_t* const self, const value_t value)
 {
-    const size_t constant = add_constant(self->chunk, value);
+    const usize constant = add_constant(self->chunk, value);
 
     if (constant > BYTE_MAX)
     {
@@ -131,12 +130,12 @@ static byte make_constant(compiler_t* const self, const value_t value)
         return 0;
     }
 
-    return (byte)constant;
+    return (u8)constant;
 }
 
 static void emit_constant(compiler_t* const self, const value_t value)
 {
-    const byte index = make_constant(self, value);
+    const u8 index = make_constant(self, value);
 
     emit_bytes(self, OP_CONSTANT, index);
 }
@@ -188,7 +187,7 @@ static void          parse_precedence(compiler_t* const  self,
 static void unary(compiler_t* const self)
 {
     const token_type_t operator_type = self->parser.previous.type;
-    const size_t       line          = self->parser.previous.line;
+    const usize        line          = self->parser.previous.line;
 
     parse_precedence(self, PREC_UNARY);
 
@@ -266,7 +265,7 @@ static parser_rule_t get_rule(const token_type_t type)
 void binary(compiler_t* const self)
 {
     const token_type_t  operator_type = self->parser.previous.type;
-    const size_t        line          = self->parser.previous.line;
+    const usize         line          = self->parser.previous.line;
 
     const parser_rule_t rule          = get_rule(operator_type);
 
@@ -290,7 +289,7 @@ void binary(compiler_t* const self)
 
 void literal(compiler_t* const self)
 {
-    const size_t token_line = self->parser.previous.line;
+    const usize token_line = self->parser.previous.line;
 
     switch (self->parser.previous.type)
     {

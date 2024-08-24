@@ -4,4 +4,4 @@
 
 void disassemble_chunk(chunk_t* chunk, const char* name);
 
-size_t disassemble_instruction(chunk_t* chunk, size_t offset);
+usize disassemble_instruction(chunk_t* chunk, usize offset);

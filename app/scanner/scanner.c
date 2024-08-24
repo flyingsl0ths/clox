@@ -18,7 +18,7 @@ static token_t make_token(const scanner_t* const self, const token_type_t type)
 {
     const token_t token = {.type   = type,
                            .start  = self->start,
-                           .length = (size_t)(self->current - self->start),
+                           .length = (usize)(self->current - self->start),
                            .line   = self->line};
 
     return token;
@@ -28,7 +28,7 @@ static token_t error_token(const scanner_t* const self, str message)
 {
     const token_t token = {.type   = TOKEN_ERROR,
                            .start  = message,
-                           .length = (size_t)strlen(message),
+                           .length = (usize)strlen(message),
                            .line   = self->line};
 
     return token;
@@ -125,8 +125,8 @@ static token_t number(scanner_t* const self)
 }
 
 static token_type_t check_keyword(scanner_t* const   self,
-                                  const size_t       start,
-                                  const size_t       length,
+                                  const usize        start,
+                                  const usize        length,
                                   str const          rest,
                                   const token_type_t type)
 {

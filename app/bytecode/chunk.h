@@ -4,7 +4,7 @@
 
 #define BYTE_MAX 255
 
-typedef enum : byte
+typedef enum : u8
 {
     OP_CONSTANT,
     OP_NEGATE,
@@ -24,11 +24,11 @@ typedef enum : byte
 
 typedef struct
 {
-    size_t offset;
-    size_t line;
+    usize offset;
+    usize line;
 } line_start_t;
 
-ARRAY(byte, chunk)
+ARRAY(u8, chunk)
 
 ARRAY(line_start_t, line)
 
@@ -42,6 +42,6 @@ typedef struct
 void   init_chunk(chunk_t* self);
 void   free_chunk(chunk_t* self);
 bool   was_initialized(chunk_t* self);
-void   write_chunk(chunk_t* self, byte data, u32 line);
 size_t add_constant(chunk_t* self, value_t value);
-size_t get_line(chunk_t* self, size_t instruction);
+void  write_chunk(chunk_t* self, u8 data, u32 line);
+usize get_line(chunk_t* self, usize instruction);
