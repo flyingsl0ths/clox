@@ -26,7 +26,7 @@ void free_table(table_t* self)
 }
 
 static entry_t* find_entry(entry_t* const      entries,
-                           const size_t        capacity,
+                           const usize         capacity,
                            obj_string_t* const key)
 {
     u32      index     = key->hash % capacity;

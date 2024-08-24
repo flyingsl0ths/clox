@@ -10,9 +10,9 @@ void append_value_array(value_array_t* const self, const value_t value)
 {
     if (self->capacity < self->count + 1UL)
     {
-        const size_t old_capacity = self->capacity;
+        const usize old_capacity = self->capacity;
 
-        self->capacity            = grow_capacity(old_capacity);
+        self->capacity           = grow_capacity(old_capacity);
 
         self->values = GROW_ARRAY(value_t, self->values, self->capacity);
     }

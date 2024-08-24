@@ -6,14 +6,14 @@
 #define ARRAY(type, type_name)                                                 \
     typedef struct                                                             \
     {                                                                          \
-        size_t count;                                                          \
-        size_t capacity;                                                       \
-        type*  values;                                                         \
+        usize count;                                                           \
+        usize capacity;                                                        \
+        type* values;                                                          \
     } type_name##_array_t;
 
 #define ARRAY_INIT(type_name, elem_type)                                       \
     void init_##type_name##_array(type_name##_array_t* const instance,         \
-                                  const size_t               size)             \
+                                  const usize                size)             \
     {                                                                          \
         instance->count    = 0;                                                \
         instance->capacity = size;                                             \

@@ -57,7 +57,7 @@ typedef enum : u32
 typedef struct
 {
     token_type_t type;
-    size_t       length;
-    size_t       line;
+    usize        length;
+    usize        line;
     str          start;
 } token_t;

@@ -3,7 +3,7 @@
 #include <bytecode/chunk.h>
 #include <utils/table.h>
 
-typedef enum : byte
+typedef enum : u8
 {
     INTERPRET_OK,
     INTERPRET_COMPILE_ERROR,

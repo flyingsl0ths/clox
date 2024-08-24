@@ -11,7 +11,7 @@ char* read_file(str path)
 
     fseek(file, 0L, SEEK_END);
 
-    const size_t file_size = ftell(file);
+    const usize file_size = ftell(file);
 
     rewind(file);
 
@@ -23,7 +23,7 @@ char* read_file(str path)
         return NULL;
     }
 
-    const size_t bytes_read = fread(buffer, sizeof(char), file_size, file);
+    const usize bytes_read = fread(buffer, sizeof(char), file_size, file);
 
     if (bytes_read < file_size)
     {

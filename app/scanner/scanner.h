@@ -5,9 +5,9 @@
 
 typedef struct
 {
-    str    start;
-    str    current;
-    size_t line;
+    str   start;
+    str   current;
+    usize line;
 } scanner_t;
 
 scanner_t init_scanner(str source);

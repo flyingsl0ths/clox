@@ -13,8 +13,8 @@ static void print_stack(const value_array_t* const stack)
 {
     puts("          ");
 
-    const size_t len = stack->count;
-    for (size_t i = 0UL; i < len; ++i)
+    const usize len = stack->count;
+    for (usize i = 0UL; i < len; ++i)
     {
         printf("[ ");
         print_value(&stack->values[i]);
@@ -28,7 +28,7 @@ static void print_stack(const value_array_t* const stack)
 
 #define STACK_MAX 256UL
 
-static byte     read_byte(vm_t* const self) { return *(self->ip)++; }
+static u8       read_byte(vm_t* const self) { return *(self->ip)++; }
 
 static value_t* read_constant(vm_t* const self)
 {
@@ -246,10 +246,10 @@ static interpret_result_t run(vm_t* const self)
         print_stack(&self->stack);
 
         disassemble_instruction(&self->chunk,
-                                (size_t)(self->ip - self->chunk.code.values));
+                                (usize)(self->ip - self->chunk.code.values));
 #endif /* ifdef DEBUG_TRACE_EXECUTION */
 
-        const byte instruction = read_byte(self);
+        const u8 instruction = read_byte(self);
 
         switch (instruction)
         {
