@@ -95,10 +95,15 @@ static void advance_compiler(compiler_t* const self)
     }
 }
 
+static bool check(parser_t* const parser, const token_type_t type)
+{
+    return parser->current.type == type;
+}
+
 static void
 consume(compiler_t* const self, const token_type_t type, str message)
 {
-    if (self->parser.current.type == type)
+    if (check(&self->parser, type))
     {
         advance_compiler(self);
         return;
@@ -107,6 +112,14 @@ consume(compiler_t* const self, const token_type_t type, str message)
     error(&self->parser, message, false);
 }
 
+static bool match(compiler_t* const self, const token_type_t type)
+{
+    if (!check(&self->parser, type)) return false;
+
+    advance_compiler(self);
+
+    return true;
+}
 
 static void emit_byte(compiler_t* const self, const u8 byte, const usize line)
 {
@@ -202,6 +215,32 @@ static void unary(compiler_t* const self)
 static void expression(compiler_t* const self)
 {
     parse_precedence(self, PREC_ASSIGNMENT);
+}
+
+static void statement(compiler_t* const self);
+
+static void expression_statement(compiler_t* const self);
+
+static void print_statement(compiler_t* const self)
+{
+    const usize line = self->parser.previous.line;
+    expression(self);
+    consume(self, TOKEN_SEMICOLON, "Expected ';' after value.");
+    emit_byte(self, OP_PRINT, line);
+}
+
+void statement(compiler_t* const self)
+{
+    if (match(self, TOKEN_PRINT)) { print_statement(self); }
+    else { expression_statement(self); }
+}
+
+static void expression_statement(compiler_t* const self)
+{
+    expression(self);
+    const usize line = self->parser.previous.line;
+    consume(self, TOKEN_SEMICOLON, "Expected ';' after expression.");
+    emit_byte(self, OP_POP, self->parser.previous.line);
 }
 
 static void grouping(compiler_t* const self)

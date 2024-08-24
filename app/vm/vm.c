@@ -167,6 +167,13 @@ static interpret_result_t negate(vm_t* const self)
     return INTERPRET_OK;
 }
 
+static void print_stmt(vm_t* const self)
+{
+    const value_t value = pop(self);
+    print_value(&value);
+    puts("");
+}
+
 static interpret_result_t ensure_types(vm_t* const        self,
                                        const value_type_t a,
                                        const value_type_t b,
@@ -259,6 +266,8 @@ static interpret_result_t run(vm_t* const self)
                 break;
             }
             case OP_NEGATE: negate(self); break;
+
+            case OP_PRINT: print_stmt(self); break;
 
             case OP_GREATER:
             {

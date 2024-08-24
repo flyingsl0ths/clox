@@ -8,6 +8,7 @@ typedef enum : u8
 {
     OP_CONSTANT,
     OP_NEGATE,
+    OP_PRINT,
     OP_ADD,
     OP_SUBTRACT,
     OP_MULTIPLY,
