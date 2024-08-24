@@ -35,6 +35,11 @@ static value_t* read_constant(vm_t* const self)
     return &self->chunk.constants.values[read_byte(self)];
 }
 
+static obj_string_t* read_string(vm_t* const self)
+{
+    return as_string(*read_constant(self));
+}
+
 static void reset_stack(vm_t* const self)
 {
     self->stack_top = self->stack.values;
@@ -65,6 +70,8 @@ vm_t init_vm()
 
     self.objects   = NULL;
 
+    self.globals   = init_table();
+
     self.strings   = init_table();
 
     return self;
@@ -91,6 +98,8 @@ void free_vm(vm_t* const self)
     self->stack_top = NULL;
     self->ip        = NULL;
 
+    free_table(&self->globals);
+
     free_table(&self->strings);
 
     free_objects(self->objects);
@@ -110,18 +119,16 @@ static value_t pop(vm_t* const self)
     return *self->stack_top;
 }
 
-static interpret_result_t ret(vm_t* const self)
-{
-    const value_t value = pop(self);
-
-    print_value(&value);
-
-    return INTERPRET_OK;
-}
-
 static value_t from_end(vm_t* const self, const s32 distance)
 {
     return self->stack_top[-1 - distance];
+}
+
+static void define_global(vm_t* const self)
+{
+    obj_string_t* const name = read_string(self);
+    table_set(&self->globals, name, from_end(self, 0));
+    pop(self);
 }
 
 static void negate_num(vm_t* const self)
@@ -315,13 +322,33 @@ static interpret_result_t run(vm_t* const self)
 
             case OP_FALSE: push(self, from_bool(false)); break;
 
+            case OP_POP: pop(self); break;
+
+            case OP_DEFINE_GLOBAL: define_global(self); break;
+
+            case OP_GET_GLOBAL:
+            {
+
+                obj_string_t* const name  = read_string(self);
+                value_t* const      value = table_get(&self->globals, name);
+
+                if (!value)
+                {
+                    runtime_error(self, "Undefined variable '%s'", name->chars);
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                push(self, *value);
+                break;
+            }
+
             case OP_EQUAL:
             {
                 equality(self);
                 break;
             }
 
-            case OP_RETURN: return ret(self);
+            case OP_RETURN: return INTERPRET_OK;
             default: return INTERPRET_COMPILE_ERROR;
         }
     }

@@ -16,6 +16,9 @@ typedef enum : u8
     OP_NOT,
     OP_TRUE,
     OP_FALSE,
+    OP_POP,
+    OP_GET_GLOBAL,
+    OP_DEFINE_GLOBAL,
     OP_EQUAL,
     OP_GREATER,
     OP_LESS,
@@ -40,9 +43,9 @@ typedef struct
     value_array_t constants;
 } chunk_t;
 
-void   init_chunk(chunk_t* self);
-void   free_chunk(chunk_t* self);
-bool   was_initialized(chunk_t* self);
-size_t add_constant(chunk_t* self, value_t value);
+void  init_chunk(chunk_t* self);
+void  free_chunk(chunk_t* self);
+bool  was_initialized(chunk_t* self);
 void  write_chunk(chunk_t* self, u8 data, u32 line);
+usize add_constant(chunk_t* self, value_t value);
 usize get_line(chunk_t* self, usize instruction);

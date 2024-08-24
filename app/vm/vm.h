@@ -12,12 +12,13 @@ typedef enum : u8
 
 typedef struct
 {
-    chunk_t        chunk;
-    byte*          ip;
-    value_t*       stack_top;
-    struct table_t strings;
-    object_t*      objects;
-    value_array_t  stack;
+    chunk_t       chunk;
+    u8*           ip;
+    value_t*      stack_top;
+    table_t       strings;
+    table_t       globals;
+    object_t*     objects;
+    value_array_t stack;
 } vm_t;
 
 vm_t               init_vm();

@@ -169,6 +169,25 @@ static void string(compiler_t* const self)
                                            self->strings)));
 }
 
+static u8 identifier_constant(compiler_t* const self, const token_t* const name)
+{
+    return make_constant(
+        self,
+        from_object((object_t*)copy_string(
+            name->start, name->length, self->objects, self->strings)));
+}
+
+static void named_variable(compiler_t* const self, const token_t name)
+{
+    const u8 arg = identifier_constant(self, &name);
+    emit_bytes(self, OP_GET_GLOBAL, arg);
+}
+
+static void variable(compiler_t* const self)
+{
+    named_variable(self, self->parser.previous);
+}
+
 static parser_rule_t get_rule(token_type_t type);
 
 static void          parse_precedence(compiler_t* const  self,
@@ -197,6 +216,18 @@ static void          parse_precedence(compiler_t* const  self,
     }
 }
 
+static u8 parse_variable(compiler_t* const self, str error_message)
+{
+    consume(self, TOKEN_IDENTIFIER, error_message);
+
+    return identifier_constant(self, &self->parser.previous);
+}
+
+static void define_variable(compiler_t* const self, const u8 global)
+{
+    emit_bytes(self, OP_DEFINE_GLOBAL, global);
+}
+
 static void unary(compiler_t* const self)
 {
     const token_type_t operator_type = self->parser.previous.type;
@@ -217,6 +248,19 @@ static void expression(compiler_t* const self)
     parse_precedence(self, PREC_ASSIGNMENT);
 }
 
+static void var_declaration(compiler_t* const self)
+{
+    const u8 global = parse_variable(self, "Expected variable name.");
+
+    match(self, TOKEN_EQUAL)
+        ? expression(self)
+        : emit_byte(self, OP_NIL, self->parser.previous.line);
+
+    consume(self, TOKEN_SEMICOLON, "Expected ';' after variable declaration.");
+
+    define_variable(self, global);
+}
+
 static void statement(compiler_t* const self);
 
 static void expression_statement(compiler_t* const self);
@@ -227,6 +271,39 @@ static void print_statement(compiler_t* const self)
     expression(self);
     consume(self, TOKEN_SEMICOLON, "Expected ';' after value.");
     emit_byte(self, OP_PRINT, line);
+}
+
+static void synchronize(compiler_t* const self)
+{
+    self->parser.panic_mode = false;
+
+    while (self->parser.current.type != TOKEN_EOF)
+    {
+        if (self->parser.previous.type == TOKEN_SEMICOLON) return;
+
+        switch (self->parser.current.type)
+        {
+            case TOKEN_CLASS:
+            case TOKEN_FUN:
+            case TOKEN_VAR:
+            case TOKEN_FOR:
+            case TOKEN_IF:
+            case TOKEN_WHILE:
+            case TOKEN_PRINT:
+            case TOKEN_RETURN: return;
+
+            default:;
+        }
+
+        advance_compiler(self);
+    }
+}
+
+static void declaration(compiler_t* const self)
+{
+    match(self, TOKEN_VAR) ? var_declaration(self) : statement(self);
+
+    if (self->parser.panic_mode) { synchronize(self); }
 }
 
 void statement(compiler_t* const self)
@@ -275,7 +352,7 @@ static parser_rule_t get_rule(const token_type_t type)
         [TOKEN_GREATER_EQUAL] = {NULL, binary, PREC_COMPARISON},
         [TOKEN_LESS]          = {NULL, binary, PREC_COMPARISON},
         [TOKEN_LESS_EQUAL]    = {NULL, binary, PREC_COMPARISON},
-        [TOKEN_IDENTIFIER]    = {NULL, NULL, PREC_NONE},
+        [TOKEN_IDENTIFIER]    = {variable, NULL, PREC_NONE},
         [TOKEN_STRING]        = {string, NULL, PREC_NONE},
         [TOKEN_NUMBER]        = {number, NULL, PREC_NONE},
         [TOKEN_AND]           = {NULL, NULL, PREC_NONE},
@@ -355,9 +432,7 @@ bool compile(str const       source,
 
     advance_compiler(&compiler);
 
-    expression(&compiler);
-
-    consume(&compiler, TOKEN_EOF, "Expected end of expression.");
+    while (!match(&compiler, TOKEN_EOF)) declaration(&compiler);
 
     emit_byte(&compiler, OP_RETURN, compiler.parser.previous.line);
 
