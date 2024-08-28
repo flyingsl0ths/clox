@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "utils/table.h"
 #include "vm.h"
 #include <bytecode/object.h>
 #include <compiler/compiler.h>
@@ -124,10 +125,12 @@ static value_t from_end(vm_t* const self, const s32 distance)
     return self->stack_top[-1 - distance];
 }
 
-static void define_global(vm_t* const self)
+static value_t peek(const vm_t* const self) { return self->stack_top[-1 - 0]; }
+
+static void    define_global(vm_t* const self)
 {
     obj_string_t* const name = read_string(self);
-    table_set(&self->globals, name, from_end(self, 0));
+    table_set(&self->globals, name, peek(self));
     pop(self);
 }
 
@@ -163,7 +166,7 @@ static void constant(vm_t* const self)
 
 static interpret_result_t negate(vm_t* const self)
 {
-    if (is_number(from_end(self, 0)))
+    if (is_number(peek(self)))
     {
         runtime_error(self, "Operand must be a number");
         return INTERPRET_RUNTIME_ERROR;
@@ -186,7 +189,7 @@ static interpret_result_t ensure_types(vm_t* const        self,
                                        const value_type_t b,
                                        str                messages[2])
 {
-    const value_t left      = from_end(self, 0);
+    const value_t left      = peek(self);
     const value_t right     = from_end(self, 1);
 
     const bool    is_first  = left.type == a && right.type == a;
@@ -242,7 +245,7 @@ static interpret_result_t run_binary_op(vm_t* const             self,
 
 static interpret_result_t divide(vm_t* const self)
 {
-    if (is_zero(from_end(self, 0)))
+    if (is_zero(peek(self)))
     {
         runtime_error(self, "Cannot divide by zero!");
         return INTERPRET_RUNTIME_ERROR;
@@ -339,6 +342,21 @@ static interpret_result_t run(vm_t* const self)
                 }
 
                 push(self, *value);
+                break;
+            }
+
+            case OP_SET_GLOBAL:
+            {
+                obj_string_t* const name    = read_string(self);
+                table_t* const      globals = &self->globals;
+
+                if (table_set(globals, name, peek(self)))
+                {
+                    table_delete(globals, name);
+                    runtime_error(self, "Undefined variable '%s'", name->chars);
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
                 break;
             }
 

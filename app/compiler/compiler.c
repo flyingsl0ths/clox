@@ -42,7 +42,7 @@ typedef enum : u32
     PREC_PRIMARY
 } precedence_t;
 
-typedef void (*parse_fn_t)(compiler_t* const);
+typedef void (*parse_fn_t)(compiler_t* const, const bool can_assign);
 
 typedef struct
 {
@@ -153,13 +153,13 @@ static void emit_constant(compiler_t* const self, const value_t value)
     emit_bytes(self, OP_CONSTANT, index);
 }
 
-static void number(compiler_t* const self)
+static void number(compiler_t* const self, const bool can_assign)
 {
     const f64 value = strtod(self->parser.previous.start, NULL);
     emit_constant(self, from_number(value));
 }
 
-static void string(compiler_t* const self)
+static void string(compiler_t* const self, const bool can_assign)
 {
     // The +1 is to skip the first quote.
     // The -2 is to remove the quotes from the string.
@@ -180,15 +180,25 @@ static u8 identifier_constant(compiler_t* const self, const token_t* const name)
             name->start, name->length, self->objects, self->strings)));
 }
 
-static void named_variable(compiler_t* const self, const token_t name)
+static void expression(compiler_t* const self);
+
+static void named_variable(compiler_t* const self,
+                           const token_t     name,
+                           const bool        can_assign)
 {
     const u8 arg = identifier_constant(self, &name);
-    emit_bytes(self, OP_GET_GLOBAL, arg);
+
+    if (can_assign && match(self, TOKEN_EQUAL))
+    {
+        expression(self);
+        emit_bytes(self, OP_SET_GLOBAL, arg);
+    }
+    else { emit_bytes(self, OP_GET_GLOBAL, arg); }
 }
 
-static void variable(compiler_t* const self)
+static void variable(compiler_t* const self, const bool can_assign)
 {
-    named_variable(self, self->parser.previous);
+    named_variable(self, self->parser.previous, can_assign);
 }
 
 static parser_rule_t get_rule(token_type_t type);
@@ -206,7 +216,8 @@ static void          parse_precedence(compiler_t* const  self,
         return;
     }
 
-    prefix_rule(self);
+    const bool can_assign = precedence <= PREC_ASSIGNMENT;
+    prefix_rule(self, can_assign);
 
     while (precedence <= get_rule(self->parser.current.type).precedence)
     {
@@ -215,7 +226,17 @@ static void          parse_precedence(compiler_t* const  self,
         const parse_fn_t infix_rule =
             get_rule(self->parser.previous.type).infix;
 
-        infix_rule(self);
+        infix_rule(self, can_assign);
+
+        if (can_assign && match(self, TOKEN_EQUAL))
+        {
+            /* Assumes assignment is not in a valid context.
+               A valid context is then a top level expression statement
+               Or as part of an assignment expression: `var a = 1; a = 2;`
+               This is to prevent things such as `a * b = c + d;`
+            */
+            error(&self->parser, "Invalid assignment target.", true);
+        }
     }
 }
 
@@ -231,7 +252,7 @@ static void define_variable(compiler_t* const self, const u8 global)
     emit_bytes(self, OP_DEFINE_GLOBAL, global);
 }
 
-static void unary(compiler_t* const self)
+static void unary(compiler_t* const self, const bool can_assign)
 {
     const token_type_t operator_type = self->parser.previous.type;
     const usize        line          = self->parser.previous.line;
@@ -323,15 +344,15 @@ static void expression_statement(compiler_t* const self)
     emit_byte(self, OP_POP, self->parser.previous.line);
 }
 
-static void grouping(compiler_t* const self)
+static void grouping(compiler_t* const self, const bool can_assign)
 {
     expression(self);
     consume(self, TOKEN_RIGHT_PAREN, "Expected ')' after expression.");
 }
 
-static void          binary(compiler_t* self);
+static void          binary(compiler_t* self, const bool can_assign);
 
-static void          literal(compiler_t* self);
+static void          literal(compiler_t* self, const bool can_assign);
 
 static parser_rule_t get_rule(const token_type_t type)
 {
@@ -381,7 +402,7 @@ static parser_rule_t get_rule(const token_type_t type)
     return rules[type];
 }
 
-void binary(compiler_t* const self)
+void binary(compiler_t* const self, const bool can_assign)
 {
     const token_type_t  operator_type = self->parser.previous.type;
     const usize         line          = self->parser.previous.line;
@@ -406,7 +427,7 @@ void binary(compiler_t* const self)
     }
 }
 
-void literal(compiler_t* const self)
+void literal(compiler_t* const self, const bool can_assign)
 {
     const usize token_line = self->parser.previous.line;
 
