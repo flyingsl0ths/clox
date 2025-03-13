@@ -120,6 +120,19 @@ static value_t pop(vm_t* const self)
     return *self->stack_top;
 }
 
+static void pop_n(vm_t* const self)
+{
+    const u8 n = read_byte(self);
+    self->stack_top -= n;
+    self->stack.count -= n;
+}
+
+static void get_local(vm_t* const self)
+{
+    const u8 slot = read_byte(self);
+    push(self, self->stack.values[slot]);
+}
+
 static value_t from_end(vm_t* const self, const s32 distance)
 {
     return self->stack_top[-1 - distance];
@@ -127,11 +140,47 @@ static value_t from_end(vm_t* const self, const s32 distance)
 
 static value_t peek(const vm_t* const self) { return self->stack_top[-1 - 0]; }
 
-static void    define_global(vm_t* const self)
+static void    set_local(vm_t* const self)
+{
+    const u8 slot            = read_byte(self);
+    self->stack.values[slot] = peek(self);
+}
+
+static void define_global(vm_t* const self)
 {
     obj_string_t* const name = read_string(self);
     table_set(&self->globals, name, peek(self));
     pop(self);
+}
+
+static interpret_result_t get_global(vm_t* const self)
+{
+    obj_string_t* const name  = read_string(self);
+    value_t* const      value = table_get(&self->globals, name);
+
+    if (!value)
+    {
+        runtime_error(self, "Undefined variable '%s'", name->chars);
+        return INTERPRET_RUNTIME_ERROR;
+    }
+
+    push(self, *value);
+    return INTERPRET_OK;
+}
+
+static interpret_result_t set_global(vm_t* const self)
+{
+    obj_string_t* const name    = read_string(self);
+    table_t* const      globals = &self->globals;
+
+    if (table_set(globals, name, peek(self)))
+    {
+        table_delete(globals, name);
+        runtime_error(self, "Undefined variable '%s'", name->chars);
+        return INTERPRET_RUNTIME_ERROR;
+    }
+
+    return INTERPRET_OK;
 }
 
 static void negate_num(vm_t* const self)
@@ -270,51 +319,35 @@ static interpret_result_t run(vm_t* const self)
 
         switch (instruction)
         {
-            case OP_CONSTANT:
-            {
-                constant(self);
-                break;
-            }
+            case OP_CONSTANT: constant(self); break;
             case OP_NEGATE: negate(self); break;
 
             case OP_PRINT: print_stmt(self); break;
 
             case OP_GREATER:
-            {
-                const interpret_result_t result =
-                    run_binary_op(self, values_greater);
-                if (result == INTERPRET_RUNTIME_ERROR) { return result; }
+                if (run_binary_op(self, values_greater) ==
+                    INTERPRET_RUNTIME_ERROR)
+                    return INTERPRET_RUNTIME_ERROR;
                 break;
-            }
 
             case OP_LESS:
-            {
-                const interpret_result_t result =
-                    run_binary_op(self, values_less);
-                if (result == INTERPRET_RUNTIME_ERROR) { return result; }
+                if (run_binary_op(self, values_less) == INTERPRET_RUNTIME_ERROR)
+                    return INTERPRET_RUNTIME_ERROR;
                 break;
-            }
 
             case OP_ADD:
-            {
-                const interpret_result_t result = run_add_op(self);
-                if (result == INTERPRET_RUNTIME_ERROR) { return result; }
+                if (run_add_op(self) == INTERPRET_RUNTIME_ERROR)
+                    return INTERPRET_RUNTIME_ERROR;
                 break;
-            }
             case OP_SUBTRACT:
-            {
-                const interpret_result_t result =
-                    run_binary_op(self, values_sub);
-                if (result == INTERPRET_RUNTIME_ERROR) { return result; }
+                if (run_binary_op(self, values_sub) == INTERPRET_RUNTIME_ERROR)
+                    return INTERPRET_RUNTIME_ERROR;
                 break;
-            }
             case OP_MULTIPLY:
-            {
-                const interpret_result_t result =
-                    run_binary_op(self, values_multiply);
-                if (result == INTERPRET_RUNTIME_ERROR) { return result; }
+                if (run_binary_op(self, values_multiply) ==
+                    INTERPRET_RUNTIME_ERROR)
+                    return INTERPRET_RUNTIME_ERROR;
                 break;
-            }
             case OP_DIVIDE: divide(self); break;
 
             case OP_NOT: negate_bool(self); break;
@@ -327,44 +360,25 @@ static interpret_result_t run(vm_t* const self)
 
             case OP_POP: pop(self); break;
 
+            case OP_POPN: pop_n(self); break;
+
+            case OP_GET_LOCAL: get_local(self); break;
+
+            case OP_SET_LOCAL: set_local(self); break;
+
             case OP_DEFINE_GLOBAL: define_global(self); break;
 
             case OP_GET_GLOBAL:
-            {
-
-                obj_string_t* const name  = read_string(self);
-                value_t* const      value = table_get(&self->globals, name);
-
-                if (!value)
-                {
-                    runtime_error(self, "Undefined variable '%s'", name->chars);
+                if (get_global(self) == INTERPRET_RUNTIME_ERROR)
                     return INTERPRET_RUNTIME_ERROR;
-                }
-
-                push(self, *value);
                 break;
-            }
 
             case OP_SET_GLOBAL:
-            {
-                obj_string_t* const name    = read_string(self);
-                table_t* const      globals = &self->globals;
-
-                if (table_set(globals, name, peek(self)))
-                {
-                    table_delete(globals, name);
-                    runtime_error(self, "Undefined variable '%s'", name->chars);
+                if (set_global(self) == INTERPRET_RUNTIME_ERROR)
                     return INTERPRET_RUNTIME_ERROR;
-                }
-
                 break;
-            }
 
-            case OP_EQUAL:
-            {
-                equality(self);
-                break;
-            }
+            case OP_EQUAL: equality(self); break;
 
             case OP_RETURN: return INTERPRET_OK;
             default: return INTERPRET_COMPILE_ERROR;

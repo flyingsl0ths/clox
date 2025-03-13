@@ -1,14 +1,21 @@
+#include "bytecode/chunk.h"
+#include "common.h"
 #include <stdio.h>
 #include <stdlib.h>
 
 #include <bytecode/object.h>
 #include <scanner/scanner.h>
 #include <scanner/token.h>
+#include <string.h>
 #include <utils/array.h>
 
 #ifdef DEBUG_TRACE_EXECUTION
 #include <bytecode/debug/debug.h>
 #endif
+
+#define UINT8_COUNT       (UINT8_MAX + 1)
+#define DUMMY_LOCAL_INDEX 0
+#define UNINTIALIZED      -1
 
 typedef struct
 {
@@ -20,11 +27,25 @@ typedef struct
 
 typedef struct
 {
+    int     depth;
+    token_t name;
+} local_t;
+
+typedef struct
+{
+    u8      local_count;
+    u8      scope_depth;
+    local_t locals[UINT8_COUNT];
+} scope_t;
+
+typedef struct
+{
     parser_t       parser;
     scanner_t      scanner;
     chunk_t* const chunk;
     object_t*      objects;
     table_t*       strings;
+    scope_t        current_scope;
 } compiler_t;
 
 typedef enum : u32
@@ -42,6 +63,7 @@ typedef enum : u32
     PREC_PRIMARY
 } precedence_t;
 
+// See parse_precedence for relevance of can_assign
 typedef void (*parse_fn_t)(compiler_t* const, const bool can_assign);
 
 typedef struct
@@ -140,7 +162,7 @@ static u8 make_constant(compiler_t* const self, const value_t value)
     if (constant > BYTE_MAX)
     {
         error(&self->parser, "Too many constants in single chunk", true);
-        return 0;
+        return constant;
     }
 
     return (u8)constant;
@@ -180,20 +202,104 @@ static u8 identifier_constant(compiler_t* const self, const token_t* const name)
             name->start, name->length, self->objects, self->strings)));
 }
 
+static void add_local(compiler_t* const self, const token_t name)
+{
+    if (self->current_scope.local_count == (UINT8_COUNT - 1))
+    {
+        error(&self->parser, "Too many variables in scope.", true);
+    }
+
+    local_t* const local =
+        &self->current_scope.locals[self->current_scope.local_count++];
+
+    local->name  = name;
+
+    local->depth = UNINTIALIZED;
+}
+
+static bool identifiers_equal(const token_t* const a, const token_t* const b)
+{
+    return a->length == b->length && memcmp(a->start, b->start, a->length) == 0;
+}
+
+static int resolve_local(compiler_t* const self, const token_t* const name)
+{
+    scope_t* const scope = &self->current_scope;
+
+    for (u8 i = scope->local_count - 1; i >= 0; --i)
+    {
+        local_t* const local = &scope->locals[i];
+
+        if (identifiers_equal(name, &local->name))
+        {
+            if (local->depth == UNINTIALIZED)
+            {
+                error(&self->parser,
+                      "Can't read local variable in its own initializer.",
+                      true);
+            }
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+static void declare_variable(compiler_t* const self)
+{
+    if (self->current_scope.scope_depth == 0) return;
+
+    const token_t* const name = &self->parser.previous;
+
+    for (usize i = self->current_scope.local_count - 1; i >= 0; --i)
+    {
+        const local_t* const local = &self->current_scope.locals[i];
+
+        if (local->depth != UNINTIALIZED &&
+            local->depth < self->current_scope.scope_depth)
+        {
+            break;
+        }
+
+        if (identifiers_equal(name, &local->name))
+        {
+            error(&self->parser,
+                  "A variable with the same name in this scope already exists.",
+                  true);
+        }
+    }
+
+    add_local(self, *name);
+}
+
 static void expression(compiler_t* const self);
 
 static void named_variable(compiler_t* const self,
                            const token_t     name,
                            const bool        can_assign)
 {
-    const u8 arg = identifier_constant(self, &name);
+    u8  get_op, set_op;
+
+    int arg = resolve_local(self, &self->parser.previous);
+
+    if (arg != UNINTIALIZED)
+    {
+        get_op = OP_GET_LOCAL;
+        set_op = OP_SET_LOCAL;
+    }
+    else
+    {
+        arg    = (int)identifier_constant(self, &self->parser.previous);
+        get_op = OP_GET_GLOBAL;
+        set_op = OP_SET_GLOBAL;
+    }
 
     if (can_assign && match(self, TOKEN_EQUAL))
     {
         expression(self);
-        emit_bytes(self, OP_SET_GLOBAL, arg);
+        emit_bytes(self, set_op, (u8)arg);
     }
-    else { emit_bytes(self, OP_GET_GLOBAL, arg); }
+    else { emit_bytes(self, get_op, (u8)arg); }
 }
 
 static void variable(compiler_t* const self, const bool can_assign)
@@ -240,15 +346,30 @@ static void          parse_precedence(compiler_t* const  self,
     }
 }
 
-static u8 parse_variable(compiler_t* const self, str error_message)
+static u8 parse_variable(compiler_t* self, str error_message)
 {
     consume(self, TOKEN_IDENTIFIER, error_message);
+
+    declare_variable(self);
+
+    if (self->current_scope.scope_depth > 0) return DUMMY_LOCAL_INDEX;
 
     return identifier_constant(self, &self->parser.previous);
 }
 
+static void mark_initialized(scope_t* const scope)
+{
+    scope->locals[scope->local_count - 1].depth = scope->scope_depth;
+}
+
 static void define_variable(compiler_t* const self, const u8 global)
 {
+    if (self->current_scope.scope_depth > 0)
+    {
+        mark_initialized(&self->current_scope);
+        return;
+    }
+
     emit_bytes(self, OP_DEFINE_GLOBAL, global);
 }
 
@@ -330,9 +451,50 @@ static void declaration(compiler_t* const self)
     if (self->parser.panic_mode) { synchronize(self); }
 }
 
+static void begin_scope(scope_t* const scope) { ++scope->scope_depth; }
+
+static void block(compiler_t* const self)
+{
+    while (!check(&self->parser, TOKEN_RIGHT_BRACE) &&
+           !check(&self->parser, TOKEN_EOF))
+    {
+        declaration(self);
+    }
+
+    consume(self, TOKEN_RIGHT_BRACE, "Expected '}' after block.");
+}
+
+static void end_scope(compiler_t* const self)
+{
+    scope_t* const scope = &self->current_scope;
+
+    --scope->scope_depth;
+
+    u8 destroyed_local_count = 0;
+
+    while (scope->local_count > 0 &&
+           scope->locals[scope->local_count - 1].depth > scope->scope_depth)
+    {
+        ++destroyed_local_count;
+        --scope->local_count;
+    }
+
+    if (destroyed_local_count > 1)
+    {
+        emit_bytes(self, OP_POPN, destroyed_local_count);
+    }
+    else { emit_byte(self, OP_POP, self->parser.previous.line); }
+}
+
 void statement(compiler_t* const self)
 {
     if (match(self, TOKEN_PRINT)) { print_statement(self); }
+    else if (match(self, TOKEN_LEFT_BRACE))
+    {
+        begin_scope(&self->current_scope);
+        block(self);
+        end_scope(self);
+    }
     else { expression_statement(self); }
 }
 
@@ -448,11 +610,12 @@ bool compile(str const       source,
              object_t* const objects,
              table_t* const  strings)
 {
-    compiler_t compiler = {.parser  = {},
-                           .scanner = init_scanner(source),
-                           .chunk   = chunk,
-                           .objects = objects,
-                           .strings = strings};
+    compiler_t compiler = {.parser        = {},
+                           .scanner       = init_scanner(source),
+                           .chunk         = chunk,
+                           .objects       = objects,
+                           .strings       = strings,
+                           .current_scope = {}};
 
     advance_compiler(&compiler);
 
