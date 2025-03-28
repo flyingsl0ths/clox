@@ -53,26 +53,22 @@ static inline object_t* as_obj(const value_t value) { return value.as.obj; }
 
 static inline value_t   from_bool(const bool value)
 {
-    const value_t out = {.type = VAL_BOOL, .as = {.boolean = value}};
-    return out;
+    return (value_t){.type = VAL_BOOL, .as = {.boolean = value}};
 }
 
 static inline value_t from_object(object_t* const value)
 {
-    const value_t out = {.type = VAL_OBJ, .as = {.obj = value}};
-    return out;
+    return (value_t){.type = VAL_OBJ, .as = {.obj = value}};
 }
 
 static inline value_t nil(void)
 {
-    const value_t out = {.type = VAL_NIL, .as = {.number = 0}};
-    return out;
+    return (value_t){.type = VAL_NIL, .as = {.number = 0}};
 }
 
 static inline value_t from_number(const f64 value)
 {
-    const value_t out = {.type = VAL_NUM, .as = {.number = value}};
-    return out;
+    return (value_t){.type = VAL_NUM, .as = {.number = value}};
 }
 
 void    init_value_array(value_array_t* self, usize size);

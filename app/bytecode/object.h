@@ -33,8 +33,7 @@ static inline object_type_t object_type(const value_t value)
 
 static inline bool is_object_type(const value_t value, const object_type_t type)
 {
-    const bool result = is_obj(value) && as_obj(value)->type == type;
-    return result;
+    return is_obj(value) && as_obj(value)->type == type;
 }
 
 static inline bool is_string(const value_t value)
