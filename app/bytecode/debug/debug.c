@@ -53,30 +53,42 @@ usize disassemble_instruction(chunk_t* const chunk, const usize offset)
 
     switch (instruction)
     {
-        case OP_CONSTANT: result = constant_instruction("OP_CONSTANT", chunk, offset);
-        case OP_NEGATE: result = simple_instruction("OP_NEGATE", offset);
-        case OP_PRINT: result = simple_instruction("OP_PRINT", offset);
-        case OP_ADD: result = simple_instruction("OP_ADD", offset);
-        case OP_SUBTRACT: result = simple_instruction("OP_SUBTRACT", offset);
-        case OP_MULTIPLY: result = simple_instruction("OP_MULTIPLY", offset);
-        case OP_DIVIDE: result = simple_instruction("OP_DIVIDE", offset);
-        case OP_NOT: result = simple_instruction("OP_NOT", offset);
-        case OP_RETURN: result = simple_instruction("OP_RETURN", offset);
-        case OP_NIL: result = simple_instruction("OP_NIL", offset);
-        case OP_TRUE: result = simple_instruction("OP_TRUE", offset);
-        case OP_FALSE: result = simple_instruction("OP_FALSE", offset);
-        case OP_POP: result = simple_instruction("OP_POP", offset);
-        case OP_POPN: result = simple_instruction("OP_POPN", offset);
+        case OP_CONSTANT:
+            result = constant_instruction("OP_CONSTANT", chunk, offset);
+            break;
+        case OP_NEGATE: result = simple_instruction("OP_NEGATE", offset); break;
+        case OP_PRINT: result = simple_instruction("OP_PRINT", offset); break;
+        case OP_ADD: result = simple_instruction("OP_ADD", offset); break;
+        case OP_SUBTRACT: result = simple_instruction("OP_SUBTRACT", offset); break;
+        case OP_MULTIPLY: result = simple_instruction("OP_MULTIPLY", offset); break;
+        case OP_DIVIDE: result = simple_instruction("OP_DIVIDE", offset); break;
+        case OP_NOT: result = simple_instruction("OP_NOT", offset); break;
+        case OP_RETURN: result = simple_instruction("OP_RETURN", offset); break;
+        case OP_NIL: result = simple_instruction("OP_NIL", offset); break;
+        case OP_TRUE: result = simple_instruction("OP_TRUE", offset); break;
+        case OP_FALSE: result = simple_instruction("OP_FALSE", offset); break;
+        case OP_POP: result = simple_instruction("OP_POP", offset); break;
+        case OP_POPN: result = simple_instruction("OP_POPN", offset); break;
         case OP_DEFINE_GLOBAL:
             result = byte_instruction("OP_DEFINE_GLOBAL", chunk, offset);
-        case OP_GET_LOCAL: result = byte_instruction("OP_GET_LOCAL", chunk, offset);
+            break;
+        case OP_GET_LOCAL:
+            result = byte_instruction("OP_GET_LOCAL", chunk, offset);
+            break;
         case OP_SET_LOCAL:
-        case OP_GET_GLOBAL: result = constant_instruction("OP_GET_LOCAL", chunk, offset);
-        case OP_SET_GLOBAL: result = constant_instruction("OP_GET_GLOBAL", chunk, offset);
-        case OP_EQUAL: result = simple_instruction("OP_EQUAL", offset);
-        case OP_GREATER: result = simple_instruction("OP_GREATER", offset);
-        case OP_LESS: result = simple_instruction("OP_LESS", offset);
-        default: printf("Unknown opcode %zu", offset); result = offset + 1UL;
+        case OP_GET_GLOBAL:
+            result = constant_instruction("OP_GET_LOCAL", chunk, offset);
+            break;
+        case OP_SET_GLOBAL:
+            result = constant_instruction("OP_GET_GLOBAL", chunk, offset);
+            break;
+        case OP_EQUAL: result = simple_instruction("OP_EQUAL", offset); break;
+        case OP_GREATER: result = simple_instruction("OP_GREATER", offset); break;
+        case OP_LESS: result = simple_instruction("OP_LESS", offset); break;
+        default:
+            printf("Unknown opcode %zu", offset);
+            result = offset + 1UL;
+            break;
     }
 
     return result;

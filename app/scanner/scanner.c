@@ -206,28 +206,32 @@ token_t scan_token(scanner_t* const self)
 
     switch (c)
     {
-        case '(': result = make_token(self, TOKEN_LEFT_PAREN);
-        case ')': result = make_token(self, TOKEN_RIGHT_PAREN);
-        case '{': result = make_token(self, TOKEN_LEFT_BRACE);
-        case '}': result = make_token(self, TOKEN_RIGHT_BRACE);
-        case ';': result = make_token(self, TOKEN_SEMICOLON);
-        case ',': result = make_token(self, TOKEN_COMMA);
-        case '.': result = make_token(self, TOKEN_DOT);
-        case '-': result = make_token(self, TOKEN_MINUS);
-        case '+': result = make_token(self, TOKEN_PLUS);
-        case '/': result = make_token(self, TOKEN_SLASH);
-        case '*': result = make_token(self, TOKEN_STAR);
+        case '(': result = make_token(self, TOKEN_LEFT_PAREN); break;
+        case ')': result = make_token(self, TOKEN_RIGHT_PAREN); break;
+        case '{': result = make_token(self, TOKEN_LEFT_BRACE); break;
+        case '}': result = make_token(self, TOKEN_RIGHT_BRACE); break;
+        case ';': result = make_token(self, TOKEN_SEMICOLON); break;
+        case ',': result = make_token(self, TOKEN_COMMA); break;
+        case '.': result = make_token(self, TOKEN_DOT); break;
+        case '-': result = make_token(self, TOKEN_MINUS); break;
+        case '+': result = make_token(self, TOKEN_PLUS); break;
+        case '/': result = make_token(self, TOKEN_SLASH); break;
+        case '*': result = make_token(self, TOKEN_STAR); break;
         case '!':
             result = make_token(self, match(self, '=') ? TOKEN_BANG_EQUAL : TOKEN_BANG);
+            break;
         case '=':
             result = make_token(self, match(self, '=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL);
+            break;
         case '<':
             result = make_token(self, match(self, '=') ? TOKEN_LESS_EQUAL : TOKEN_LESS);
+            break;
         case '>':
             result =
                 make_token(self, match(self, '=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER);
-        case '"': result = string(self);
-        default: result = error_token(self, "Unexpected character.");
+            break;
+        case '"': result = string(self); break;
+        default: result = error_token(self, "Unexpected character."); break;
     }
 
     return result;
