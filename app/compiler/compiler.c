@@ -174,12 +174,14 @@ static void emit_constant(compiler_t* const self, const value_t value)
     emit_bytes(self, OP_CONSTANT, index);
 }
 
+// NOLINTNEXTLINE(misc-unused-parameters)
 static void number(compiler_t* const self, const bool _)
 {
     const f64 value = strtod(self->parser.previous.start, NULL);
     emit_constant(self, from_number(value));
 }
 
+// NOLINTNEXTLINE(misc-unused-parameters)
 static void string(compiler_t* const self, const bool _)
 {
     // The +1 is to skip the first quote.
@@ -366,6 +368,7 @@ static void define_variable(compiler_t* const self, const u8 global)
     emit_bytes(self, OP_DEFINE_GLOBAL, global);
 }
 
+// NOLINTNEXTLINE(misc-unused-parameters)
 static void unary(compiler_t* const self, const bool _)
 {
     const token_type_t operator_type = self->parser.previous.type;
@@ -494,6 +497,7 @@ static void expression_statement(compiler_t* const self)
     emit_byte(self, OP_POP, line);
 }
 
+// NOLINTNEXTLINE(misc-unused-parameters)
 static void grouping(compiler_t* const self, const bool _)
 {
     expression(self);
@@ -552,6 +556,7 @@ static parser_rule_t get_rule(const token_type_t type)
     return rules[type];
 }
 
+// NOLINTNEXTLINE(misc-unused-parameters)
 void binary(compiler_t* const self, const bool _)
 {
     const token_type_t  operator_type = self->parser.previous.type;
@@ -577,6 +582,7 @@ void binary(compiler_t* const self, const bool _)
     }
 }
 
+// NOLINTNEXTLINE(misc-unused-parameters)
 void literal(compiler_t* const self, const bool _)
 {
     const usize token_line = self->parser.previous.line;
