@@ -202,31 +202,33 @@ token_t scan_token(scanner_t* const self)
 
     if (is_alpha(c)) { return identifier(self); }
 
+    token_t result;
+
     switch (c)
     {
-        case '(': return make_token(self, TOKEN_LEFT_PAREN);
-        case ')': return make_token(self, TOKEN_RIGHT_PAREN);
-        case '{': return make_token(self, TOKEN_LEFT_BRACE);
-        case '}': return make_token(self, TOKEN_RIGHT_BRACE);
-        case ';': return make_token(self, TOKEN_SEMICOLON);
-        case ',': return make_token(self, TOKEN_COMMA);
-        case '.': return make_token(self, TOKEN_DOT);
-        case '-': return make_token(self, TOKEN_MINUS);
-        case '+': return make_token(self, TOKEN_PLUS);
-        case '/': return make_token(self, TOKEN_SLASH);
-        case '*': return make_token(self, TOKEN_STAR);
+        case '(': result = make_token(self, TOKEN_LEFT_PAREN);
+        case ')': result = make_token(self, TOKEN_RIGHT_PAREN);
+        case '{': result = make_token(self, TOKEN_LEFT_BRACE);
+        case '}': result = make_token(self, TOKEN_RIGHT_BRACE);
+        case ';': result = make_token(self, TOKEN_SEMICOLON);
+        case ',': result = make_token(self, TOKEN_COMMA);
+        case '.': result = make_token(self, TOKEN_DOT);
+        case '-': result = make_token(self, TOKEN_MINUS);
+        case '+': result = make_token(self, TOKEN_PLUS);
+        case '/': result = make_token(self, TOKEN_SLASH);
+        case '*': result = make_token(self, TOKEN_STAR);
         case '!':
-            return make_token(self, match(self, '=') ? TOKEN_BANG_EQUAL : TOKEN_BANG);
+            result = make_token(self, match(self, '=') ? TOKEN_BANG_EQUAL : TOKEN_BANG);
         case '=':
-            return make_token(self, match(self, '=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL);
+            result = make_token(self, match(self, '=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL);
         case '<':
-            return make_token(self, match(self, '=') ? TOKEN_LESS_EQUAL : TOKEN_LESS);
+            result = make_token(self, match(self, '=') ? TOKEN_LESS_EQUAL : TOKEN_LESS);
         case '>':
-            return make_token(self,
-                              match(self, '=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER);
-        case '"': return string(self);
-        default: error_token(self, "Unexpected character.");
+            result =
+                make_token(self, match(self, '=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER);
+        case '"': result = string(self);
+        default: result = error_token(self, "Unexpected character.");
     }
 
-    return error_token(self, "Unexpected character.");
+    return result;
 }
