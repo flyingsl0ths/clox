@@ -1,4 +1,4 @@
-add_executable(${PROJECT_NAME} main.c)
+add_executable(${PROJECT_NAME})
 
 list(
   APPEND
@@ -31,13 +31,25 @@ list(APPEND COMPILER "compiler/compiler.h" "compiler/compiler.c")
 
 target_sources(
   ${PROJECT_NAME}
-  PRIVATE common.h
-          "${BYTECODE}"
-          "${VM}"
-          "${UTILS}"
-          "${DBG}"
-          "${SCANNER}"
-          "${COMPILER}")
+  PRIVATE main.c
+          common.h
+          ${BYTECODE}
+          ${VM}
+          ${UTILS}
+          ${DBG}
+          ${SCANNER}
+          ${COMPILER})
+
+target_compile_options(
+  ${PROJECT_NAME}
+  PRIVATE -Wall
+          -Wextra
+          -Wpedantic
+          -Wconversion
+          -Werror=return-type
+          -Wunused-local-typedefs
+          $<$<NOT:$<CONFIG:Debug>>:-Werror> # warnings as errors if not Debug
+)
 
 target_include_directories(${PROJECT_NAME} PUBLIC "${PROJECT_SOURCE_DIR}/app")
 

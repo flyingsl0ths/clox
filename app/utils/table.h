@@ -15,19 +15,16 @@ struct table_t
     entry_array_t entries;
 };
 
-table_t init_table();
+table_t       init_table(void);
 
-void    free_table(table_t* table);
+void          free_table(table_t* self);
 
-bool    table_set(table_t* table, obj_string_t* const key, const value_t value);
+bool          table_set(table_t* table, obj_string_t* key, value_t value);
 
-void    table_add_all(table_t* const from, table_t* const to);
+void          table_add_all(table_t* from, table_t* to);
 
-value_t*      table_get(const table_t* const table, obj_string_t* const key);
+value_t*      table_get(table_t* table, obj_string_t* key);
 
-bool          table_delete(table_t* const table, obj_string_t* const key);
+bool          table_delete(table_t* table, obj_string_t* key);
 
-obj_string_t* table_find_string(table_t* const table,
-                                str            chars,
-                                const usize    length,
-                                const u32      hash);
+obj_string_t* table_find_string(table_t* table, str chars, usize length, u32 hash);

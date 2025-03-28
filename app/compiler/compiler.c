@@ -48,7 +48,7 @@ typedef struct
     scope_t        current_scope;
 } compiler_t;
 
-typedef enum : u32
+typedef enum
 {
     PREC_NONE,
     PREC_ASSIGNMENT, // =
@@ -122,8 +122,7 @@ static bool check(parser_t* const parser, const token_type_t type)
     return parser->current.type == type;
 }
 
-static void
-consume(compiler_t* const self, const token_type_t type, str message)
+static void consume(compiler_t* const self, const token_type_t type, str message)
 {
     if (check(&self->parser, type))
     {
@@ -136,7 +135,7 @@ consume(compiler_t* const self, const token_type_t type, str message)
 
 static bool match(compiler_t* const self, const token_type_t type)
 {
-    if (!check(&self->parser, type)) return false;
+    if (!check(&self->parser, type)) { return false; }
 
     advance_compiler(self);
 
@@ -145,14 +144,14 @@ static bool match(compiler_t* const self, const token_type_t type)
 
 static void emit_byte(compiler_t* const self, const u8 byte, const usize line)
 {
-    write_chunk(self->chunk, byte, line);
+    write_chunk(self->chunk, byte, (u32)line);
 }
 
-static void
-emit_bytes(compiler_t* const self, const u8 first_byte, const u8 second_byte)
+static void emit_bytes(compiler_t* const self, const u8 first_byte, const u8 second_byte)
 {
-    write_chunk(self->chunk, first_byte, self->parser.previous.line);
-    write_chunk(self->chunk, second_byte, self->parser.previous.line);
+    const u32 line = (u32)self->parser.previous.line;
+    write_chunk(self->chunk, first_byte, line);
+    write_chunk(self->chunk, second_byte, line);
 }
 
 static u8 make_constant(compiler_t* const self, const value_t value)
@@ -162,7 +161,7 @@ static u8 make_constant(compiler_t* const self, const value_t value)
     if (constant > BYTE_MAX)
     {
         error(&self->parser, "Too many constants in single chunk", true);
-        return constant;
+        return (u8)constant;
     }
 
     return (u8)constant;
@@ -175,31 +174,29 @@ static void emit_constant(compiler_t* const self, const value_t value)
     emit_bytes(self, OP_CONSTANT, index);
 }
 
-static void number(compiler_t* const self, const bool can_assign)
+static void number(compiler_t* const self, const bool _)
 {
     const f64 value = strtod(self->parser.previous.start, NULL);
     emit_constant(self, from_number(value));
 }
 
-static void string(compiler_t* const self, const bool can_assign)
+static void string(compiler_t* const self, const bool _)
 {
     // The +1 is to skip the first quote.
     // The -2 is to remove the quotes from the string.
     //  ""hello"" -> hello
-    emit_constant(
-        self,
-        from_object((object_t*)copy_string(self->parser.previous.start + 1UL,
-                                           self->parser.previous.length - 2UL,
-                                           self->objects,
-                                           self->strings)));
+    emit_constant(self,
+                  from_object((object_t*)copy_string(self->parser.previous.start + 1UL,
+                                                     self->parser.previous.length - 2UL,
+                                                     self->objects,
+                                                     self->strings)));
 }
 
 static u8 identifier_constant(compiler_t* const self, const token_t* const name)
 {
-    return make_constant(
-        self,
-        from_object((object_t*)copy_string(
-            name->start, name->length, self->objects, self->strings)));
+    return make_constant(self,
+                         from_object((object_t*)copy_string(
+                             name->start, name->length, self->objects, self->strings)));
 }
 
 static void add_local(compiler_t* const self, const token_t name)
@@ -209,12 +206,11 @@ static void add_local(compiler_t* const self, const token_t name)
         error(&self->parser, "Too many variables in scope.", true);
     }
 
-    local_t* const local =
-        &self->current_scope.locals[self->current_scope.local_count++];
+    local_t* const local = &self->current_scope.locals[self->current_scope.local_count++];
 
-    local->name  = name;
+    local->name          = name;
 
-    local->depth = UNINTIALIZED;
+    local->depth         = UNINTIALIZED;
 }
 
 static bool identifiers_equal(const token_t* const a, const token_t* const b)
@@ -247,7 +243,7 @@ static int resolve_local(compiler_t* const self, const token_t* const name)
 
 static void declare_variable(compiler_t* const self)
 {
-    if (self->current_scope.scope_depth == 0) return;
+    if (self->current_scope.scope_depth == 0) { return; }
 
     const token_t* const name = &self->parser.previous;
 
@@ -272,15 +268,14 @@ static void declare_variable(compiler_t* const self)
     add_local(self, *name);
 }
 
-static void expression(compiler_t* const self);
+static void expression(compiler_t* self);
 
-static void named_variable(compiler_t* const self,
-                           const token_t     name,
-                           const bool        can_assign)
+static void named_variable(compiler_t* const self, const bool can_assign)
 {
-    u8  get_op, set_op;
+    u8  get_op = 0;
+    u8  set_op = 0;
 
-    int arg = resolve_local(self, &self->parser.previous);
+    int arg    = resolve_local(self, &self->parser.previous);
 
     if (arg != UNINTIALIZED)
     {
@@ -304,13 +299,12 @@ static void named_variable(compiler_t* const self,
 
 static void variable(compiler_t* const self, const bool can_assign)
 {
-    named_variable(self, self->parser.previous, can_assign);
+    named_variable(self, can_assign);
 }
 
 static parser_rule_t get_rule(token_type_t type);
 
-static void          parse_precedence(compiler_t* const  self,
-                                      const precedence_t precedence)
+static void parse_precedence(compiler_t* const self, const precedence_t precedence)
 {
     advance_compiler(self);
 
@@ -329,8 +323,7 @@ static void          parse_precedence(compiler_t* const  self,
     {
         advance_compiler(self);
 
-        const parse_fn_t infix_rule =
-            get_rule(self->parser.previous.type).infix;
+        const parse_fn_t infix_rule = get_rule(self->parser.previous.type).infix;
 
         infix_rule(self, can_assign);
 
@@ -352,7 +345,7 @@ static u8 parse_variable(compiler_t* self, str error_message)
 
     declare_variable(self);
 
-    if (self->current_scope.scope_depth > 0) return DUMMY_LOCAL_INDEX;
+    if (self->current_scope.scope_depth > 0) { return DUMMY_LOCAL_INDEX; }
 
     return identifier_constant(self, &self->parser.previous);
 }
@@ -373,7 +366,7 @@ static void define_variable(compiler_t* const self, const u8 global)
     emit_bytes(self, OP_DEFINE_GLOBAL, global);
 }
 
-static void unary(compiler_t* const self, const bool can_assign)
+static void unary(compiler_t* const self, const bool _)
 {
     const token_type_t operator_type = self->parser.previous.type;
     const usize        line          = self->parser.previous.line;
@@ -397,18 +390,17 @@ static void var_declaration(compiler_t* const self)
 {
     const u8 global = parse_variable(self, "Expected variable name.");
 
-    match(self, TOKEN_EQUAL)
-        ? expression(self)
-        : emit_byte(self, OP_NIL, self->parser.previous.line);
+    match(self, TOKEN_EQUAL) ? expression(self)
+                             : emit_byte(self, OP_NIL, self->parser.previous.line);
 
     consume(self, TOKEN_SEMICOLON, "Expected ';' after variable declaration.");
 
     define_variable(self, global);
 }
 
-static void statement(compiler_t* const self);
+static void statement(compiler_t* self);
 
-static void expression_statement(compiler_t* const self);
+static void expression_statement(compiler_t* self);
 
 static void print_statement(compiler_t* const self)
 {
@@ -424,7 +416,7 @@ static void synchronize(compiler_t* const self)
 
     while (self->parser.current.type != TOKEN_EOF)
     {
-        if (self->parser.previous.type == TOKEN_SEMICOLON) return;
+        if (self->parser.previous.type == TOKEN_SEMICOLON) { return; }
 
         switch (self->parser.current.type)
         {
@@ -455,8 +447,7 @@ static void begin_scope(scope_t* const scope) { ++scope->scope_depth; }
 
 static void block(compiler_t* const self)
 {
-    while (!check(&self->parser, TOKEN_RIGHT_BRACE) &&
-           !check(&self->parser, TOKEN_EOF))
+    while (!check(&self->parser, TOKEN_RIGHT_BRACE) && !check(&self->parser, TOKEN_EOF))
     {
         declaration(self);
     }
@@ -479,10 +470,7 @@ static void end_scope(compiler_t* const self)
         --scope->local_count;
     }
 
-    if (destroyed_local_count > 1)
-    {
-        emit_bytes(self, OP_POPN, destroyed_local_count);
-    }
+    if (destroyed_local_count > 1) { emit_bytes(self, OP_POPN, destroyed_local_count); }
     else { emit_byte(self, OP_POP, self->parser.previous.line); }
 }
 
@@ -503,18 +491,18 @@ static void expression_statement(compiler_t* const self)
     expression(self);
     const usize line = self->parser.previous.line;
     consume(self, TOKEN_SEMICOLON, "Expected ';' after expression.");
-    emit_byte(self, OP_POP, self->parser.previous.line);
+    emit_byte(self, OP_POP, line);
 }
 
-static void grouping(compiler_t* const self, const bool can_assign)
+static void grouping(compiler_t* const self, const bool _)
 {
     expression(self);
     consume(self, TOKEN_RIGHT_PAREN, "Expected ')' after expression.");
 }
 
-static void          binary(compiler_t* self, const bool can_assign);
+static void          binary(compiler_t* self, bool _);
 
-static void          literal(compiler_t* self, const bool can_assign);
+static void          literal(compiler_t* self, bool _);
 
 static parser_rule_t get_rule(const token_type_t type)
 {
@@ -564,7 +552,7 @@ static parser_rule_t get_rule(const token_type_t type)
     return rules[type];
 }
 
-void binary(compiler_t* const self, const bool can_assign)
+void binary(compiler_t* const self, const bool _)
 {
     const token_type_t  operator_type = self->parser.previous.type;
     const usize         line          = self->parser.previous.line;
@@ -589,7 +577,7 @@ void binary(compiler_t* const self, const bool can_assign)
     }
 }
 
-void literal(compiler_t* const self, const bool can_assign)
+void literal(compiler_t* const self, const bool _)
 {
     const usize token_line = self->parser.previous.line;
 
@@ -610,16 +598,14 @@ bool compile(str const       source,
              object_t* const objects,
              table_t* const  strings)
 {
-    compiler_t compiler = {.parser        = {},
-                           .scanner       = init_scanner(source),
-                           .chunk         = chunk,
-                           .objects       = objects,
-                           .strings       = strings,
-                           .current_scope = {}};
+    compiler_t compiler = {.scanner = init_scanner(source),
+                           .chunk   = chunk,
+                           .objects = objects,
+                           .strings = strings};
 
     advance_compiler(&compiler);
 
-    while (!match(&compiler, TOKEN_EOF)) declaration(&compiler);
+    while (!match(&compiler, TOKEN_EOF)) { declaration(&compiler); }
 
     emit_byte(&compiler, OP_RETURN, compiler.parser.previous.line);
 

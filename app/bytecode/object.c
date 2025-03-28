@@ -28,7 +28,7 @@ allocate_object(const usize size, const object_type_t type, object_t* objects)
     return obj;
 }
 
-#define ALLOCATE_OBJ(type, object_type, objects)                               \
+#define ALLOCATE_OBJ(type, object_type, objects)                                         \
     (type*)allocate_object(sizeof(type), object_type, objects)
 
 static obj_string_t* allocate_string(str const       chars,
@@ -37,12 +37,11 @@ static obj_string_t* allocate_string(str const       chars,
                                      object_t* const objects,
                                      table_t* const  strings)
 {
-    obj_string_t* const string =
-        ALLOCATE_OBJ(obj_string_t, OBJ_STRING, objects);
+    obj_string_t* const string = ALLOCATE_OBJ(obj_string_t, OBJ_STRING, objects);
 
-    string->length = length;
-    string->chars  = chars;
-    string->hash   = hash;
+    string->length             = length;
+    string->chars              = chars;
+    string->hash               = hash;
 
     table_set(strings, string, NIL_VAL);
 
@@ -67,12 +66,11 @@ obj_string_t* copy_string(str const       chars,
                           object_t* const objects,
                           table_t* const  strings)
 {
-    const uint32_t      hash = hash_string(chars, length);
+    const uint32_t      hash     = hash_string(chars, length);
 
-    obj_string_t* const interned =
-        table_find_string(strings, chars, length, hash);
+    obj_string_t* const interned = table_find_string(strings, chars, length, hash);
 
-    if (interned != NULL) return interned;
+    if (interned != NULL) { return interned; }
 
     char* heap_chars = ALLOCATE(char, length - 1UL);
     memcpy(heap_chars, chars, length);
@@ -103,10 +101,9 @@ obj_string_t* take_string(char*           chars,
                           object_t* const objects,
                           table_t* const  strings)
 {
-    const uint32_t      hash = hash_string(chars, length);
+    const uint32_t      hash     = hash_string(chars, length);
 
-    obj_string_t* const interned =
-        table_find_string(strings, chars, length, hash);
+    obj_string_t* const interned = table_find_string(strings, chars, length, hash);
 
     if (interned != NULL)
     {

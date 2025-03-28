@@ -4,7 +4,7 @@
 
 #define BYTE_MAX 255
 
-typedef enum : u8
+typedef enum
 {
     OP_CONSTANT,
     OP_NEGATE,

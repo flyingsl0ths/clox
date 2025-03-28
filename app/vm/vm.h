@@ -3,7 +3,7 @@
 #include <bytecode/chunk.h>
 #include <utils/table.h>
 
-typedef enum : u8
+typedef enum
 {
     INTERPRET_OK,
     INTERPRET_COMPILE_ERROR,
@@ -21,6 +21,6 @@ typedef struct
     value_array_t stack;
 } vm_t;
 
-vm_t               init_vm();
+vm_t               init_vm(void);
 void               free_vm(vm_t* self);
 interpret_result_t interpret(vm_t* self, str source);

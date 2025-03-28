@@ -11,7 +11,7 @@ char* read_file(str path)
 
     fseek(file, 0L, SEEK_END);
 
-    const usize file_size = ftell(file);
+    const usize file_size = (usize)ftell(file);
 
     rewind(file);
 

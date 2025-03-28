@@ -20,7 +20,7 @@ BinPackParameters: false
 BreakBeforeBraces: Allman
 BreakBeforeTernaryOperators: true
 BreakStringLiterals: true
-ColumnLimit: 80
+ColumnLimit: 90
 IndentCaseLabels: true
 IndentWidth: 4
 Language: Cpp

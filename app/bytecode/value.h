@@ -32,28 +32,22 @@ typedef value_t (*binary_operator_t)(const value_t, const value_t);
 
 ARRAY(value_t, value)
 
-static inline bool is_bool(const value_t value)
-{
-    return value.type == VAL_BOOL;
-}
+static inline bool is_bool(const value_t value) { return value.type == VAL_BOOL; }
 
 static inline bool is_nil(const value_t value) { return value.type == VAL_NIL; }
 
-static inline bool is_number(const value_t value)
-{
-    return value.type == VAL_NUM;
-}
+static inline bool is_number(const value_t value) { return value.type == VAL_NUM; }
 
 static inline bool is_zero(const value_t value)
 {
     return value.type == VAL_NUM && value.as.number == 0.0;
 }
 
-static inline bool is_obj(const value_t value) { return value.type == VAL_OBJ; }
+static inline bool      is_obj(const value_t value) { return value.type == VAL_OBJ; }
 
-static inline bool as_bool(const value_t value) { return value.as.boolean; }
+static inline bool      as_bool(const value_t value) { return value.as.boolean; }
 
-static inline f64  as_number(const value_t value) { return value.as.number; }
+static inline f64       as_number(const value_t value) { return value.as.number; }
 
 static inline object_t* as_obj(const value_t value) { return value.as.obj; }
 
@@ -69,7 +63,7 @@ static inline value_t from_object(object_t* const value)
     return out;
 }
 
-static inline value_t nil()
+static inline value_t nil(void)
 {
     const value_t out = {.type = VAL_NIL, .as = {.number = 0}};
     return out;
@@ -87,12 +81,9 @@ void    append_value_array(value_array_t* self, value_t value);
 
 void    free_value_array(value_array_t* self);
 
-void    print_value(const value_t* const self);
+void    print_value(const value_t* self);
 
-value_t values_add(value_t         left,
-                   value_t         right,
-                   object_t* const objects,
-                   table_t* const  strings);
+value_t values_add(value_t left, value_t right, object_t* objects, table_t* strings);
 
 value_t values_sub(value_t left, value_t right);
 
@@ -104,4 +95,4 @@ value_t values_equal(value_t left, value_t right);
 
 value_t values_greater(value_t left, value_t right);
 
-value_t values_less(const value_t left, const value_t right);
+value_t values_less(value_t left, value_t right);

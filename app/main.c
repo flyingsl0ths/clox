@@ -36,8 +36,8 @@ static void run_file(vm_t* const vm, str path)
 
     free(source);
 
-    if (result == INTERPRET_COMPILE_ERROR) exit(65);
-    if (result == INTERPRET_RUNTIME_ERROR) exit(70);
+    if (result == INTERPRET_COMPILE_ERROR) { exit(65); }
+    if (result == INTERPRET_RUNTIME_ERROR) { exit(70); }
 }
 
 s32 main(const s32 argc, const char** const argv)

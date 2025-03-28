@@ -7,9 +7,9 @@
 
 ARRAY_INIT(entry, entry_t)
 
-table_t init_table()
+table_t init_table(void)
 {
-    entry_array_t entries = {};
+    entry_array_t entries;
 
     init_entry_array(&entries, 0UL);
 
@@ -25,9 +25,8 @@ void free_table(table_t* self)
     FREE_ARRAY(entries)
 }
 
-static entry_t* find_entry(entry_t* const      entries,
-                           const usize         capacity,
-                           obj_string_t* const key)
+static entry_t*
+find_entry(entry_t* const entries, const usize capacity, obj_string_t* const key)
 {
     u32      index     = key->hash % capacity;
 
@@ -38,11 +37,8 @@ static entry_t* find_entry(entry_t* const      entries,
         entry_t* const entry = &entries[index];
         if (entry->key == NULL)
         {
-            if (is_nil(entry->value))
-            {
-                return tombstone != NULL ? tombstone : entry;
-            }
-            else if (tombstone == NULL) { tombstone = entry; }
+            if (is_nil(entry->value)) { return tombstone != NULL ? tombstone : entry; }
+            if (tombstone == NULL) { tombstone = entry; }
         }
         else if (entry->key == key) { return entry; }
 
@@ -62,12 +58,10 @@ static void adjust_capacity(table_t* self, const usize capacity)
 
     self->entries.count = 0UL;
 
-    for (usize i = 0UL, prior_capacity = self->entries.capacity;
-         i < prior_capacity;
-         ++i)
+    for (usize i = 0UL, prior_capacity = self->entries.capacity; i < prior_capacity; ++i)
     {
         entry_t* const entry = &self->entries.values[i];
-        if (entry->key == NULL) continue;
+        if (entry->key == NULL) { continue; }
 
         entry_t* const dest = find_entry(new_entries, capacity, entry->key);
         dest->key           = entry->key;
@@ -84,21 +78,21 @@ static void adjust_capacity(table_t* self, const usize capacity)
     self->entries.capacity = capacity;
 }
 
-bool table_set(table_t* self, obj_string_t* const key, const value_t value)
+bool table_set(table_t* self, obj_string_t* key, value_t value)
 {
 
     entry_array_t* const entries = &self->entries;
 
-    if (entries->count + 1 > entries->capacity * TABLE_MAX_LOAD)
+    if ((f64)(entries->count + 1) > (f64)entries->capacity * TABLE_MAX_LOAD)
     {
         const usize capacity = grow_capacity(entries->capacity);
         adjust_capacity(self, capacity);
     }
 
-    entry_t* const entry = find_entry(entries->values, entries->capacity, key);
+    entry_t* const entry      = find_entry(entries->values, entries->capacity, key);
 
     const bool     is_new_key = entry->key == NULL;
-    if (is_new_key && is_nil(entry->value)) ++entries->count;
+    if (is_new_key && is_nil(entry->value)) { ++entries->count; }
 
     entry->key   = key;
     entry->value = value;
@@ -111,13 +105,13 @@ void table_add_all(table_t* const from, table_t* const to)
     for (usize i = 0UL, capacity = from->entries.capacity; i < capacity; ++i)
     {
         entry_t* const entry = &from->entries.values[i];
-        if (entry->key != NULL) table_set(to, entry->key, entry->value);
+        if (entry->key != NULL) { table_set(to, entry->key, entry->value); }
     }
 }
 
-value_t* table_get(const table_t* const table, obj_string_t* const key)
+value_t* table_get(table_t* table, obj_string_t* key)
 {
-    if (table->entries.count == 0) return NULL;
+    if (table->entries.count == 0) { return NULL; }
 
     entry_t* const entry =
         find_entry(table->entries.values, table->entries.capacity, key);
@@ -127,12 +121,12 @@ value_t* table_get(const table_t* const table, obj_string_t* const key)
 
 bool table_delete(table_t* const table, obj_string_t* const key)
 {
-    if (table->entries.count == 0) return false;
+    if (table->entries.count == 0) { return false; }
 
     entry_t* const entry =
         find_entry(table->entries.values, table->entries.capacity, key);
 
-    if (entry->key == NULL) return false;
+    if (entry->key == NULL) { return false; }
 
     entry->key   = NULL;
     entry->value = from_bool(true);
@@ -140,12 +134,10 @@ bool table_delete(table_t* const table, obj_string_t* const key)
     return true;
 }
 
-obj_string_t* table_find_string(table_t* const table,
-                                str            chars,
-                                const usize    length,
-                                const u32      hash)
+obj_string_t*
+table_find_string(table_t* const table, str chars, const usize length, const u32 hash)
 {
-    if (table->entries.count == 0) return NULL;
+    if (table->entries.count == 0) { return NULL; }
 
     u32 index = hash % table->entries.capacity;
 
@@ -156,7 +148,7 @@ obj_string_t* table_find_string(table_t* const table,
         if (entry->key == NULL)
         {
             // Stop if we find an empty non-tombstone entry.
-            if (is_nil(entry->value)) return NULL;
+            if (is_nil(entry->value)) { return NULL; }
         }
         else if (entry->key->length == length && entry->key->hash == hash &&
                  memcmp(entry->key->chars, chars, length) == 0)

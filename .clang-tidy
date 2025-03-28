@@ -1,40 +1,12 @@
 ﻿---
-BasedOnStyle: LLVM
-AccessModifierOffset: "-2"
-AlignAfterOpenBracket: Align
-AlignConsecutiveMacros: "true"
-AlignConsecutiveAssignments: "true"
-AlignConsecutiveDeclarations: "true"
-AlignEscapedNewlines: Right
-AlignOperands: "true"
-AlignTrailingComments: "true"
-AllowShortBlocksOnASingleLine: "true"
-AllowShortCaseLabelsOnASingleLine: "true"
-AllowShortFunctionsOnASingleLine: All
-AllowShortIfStatementsOnASingleLine: Always
-AllowShortLoopsOnASingleLine: "true"
-AlwaysBreakAfterReturnType: None
-AlwaysBreakBeforeMultilineStrings: "false"
-BinPackArguments: "false"
-BinPackParameters: "false"
-BreakBeforeBraces: Allan
-BreakBeforeTernaryOperators: "true"
-BreakStringLiterals: "true"
-ColumnLimit: "80"
-IndentCaseLabels: "true"
-IndentWidth: "4"
-Language: Cpp
-PointerAlignment: Left
-IncludeCategories:
-  # Headers in <> with .h extension.
-  - Regex: '<([A-Za-z0-9\/-_])+\.h>'
-    Priority: 10
-  # Headers in <> without extension.
-  - Regex: '<([A-Za-z0-9\/-_])+>'
-    Priority: 30
-SortUsingDeclarations: "true"
-SpaceBeforeAssignmentOperators: "true"
-SpaceBeforeParens: ControlStatements
-SpaceBeforeRangeBasedForLoopColon: "true"
-SpacesInContainerLiterals: "true"
-Standard: C99
+Checks: 'clang-analyzer-*,
+	misc-*,
+	performance-*,
+	portability-*,
+	readability-*,
+	-readability-identifier-length,
+	-readability-magic-numbers,
+	-readability-redundant-member-init,
+	-readability-uppercase-literal-suffix'
+...
+

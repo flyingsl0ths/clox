@@ -9,10 +9,7 @@ static bool is_alpha(const char c)
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
 }
 
-static bool is_at_end(const scanner_t* const self)
-{
-    return *self->current == '\0';
-}
+static bool    is_at_end(const scanner_t* const self) { return *self->current == '\0'; }
 
 static token_t make_token(const scanner_t* const self, const token_type_t type)
 {
@@ -130,7 +127,7 @@ static token_type_t check_keyword(scanner_t* const   self,
                                   str const          rest,
                                   const token_type_t type)
 {
-    const bool matches = self->current - self->start == start + length &&
+    const bool matches = (usize)(self->current - self->start) == start + length &&
                          memcmp(self->start + start, rest, length) == 0;
 
     return matches ? type : TOKEN_IDENTIFIER;
@@ -148,8 +145,7 @@ static token_type_t identifier_type(scanner_t* const self)
             {
                 switch (self->start[1])
                 {
-                    case 'a':
-                        return check_keyword(self, 2, 3, "lse", TOKEN_FALSE);
+                    case 'a': return check_keyword(self, 2, 3, "lse", TOKEN_FALSE);
                     case 'o': return check_keyword(self, 2, 1, "r", TOKEN_FOR);
                     case 'u': return check_keyword(self, 2, 1, "n", TOKEN_FUN);
                 }
@@ -166,10 +162,8 @@ static token_type_t identifier_type(scanner_t* const self)
             {
                 switch (self->start[1])
                 {
-                    case 'h':
-                        return check_keyword(self, 2, 2, "is", TOKEN_THIS);
-                    case 'r':
-                        return check_keyword(self, 2, 2, "ue", TOKEN_TRUE);
+                    case 'h': return check_keyword(self, 2, 2, "is", TOKEN_THIS);
+                    case 'r': return check_keyword(self, 2, 2, "ue", TOKEN_TRUE);
                 }
             }
             break;
@@ -182,10 +176,7 @@ static token_type_t identifier_type(scanner_t* const self)
 
 static token_t identifier(scanner_t* const self)
 {
-    while (is_alpha(peek(self)) || is_digit(peek(self)))
-    {
-        advance_scanner_(self);
-    }
+    while (is_alpha(peek(self)) || is_digit(peek(self))) { advance_scanner_(self); }
 
     return make_token(self, identifier_type(self));
 }
@@ -225,17 +216,14 @@ token_t scan_token(scanner_t* const self)
         case '/': return make_token(self, TOKEN_SLASH);
         case '*': return make_token(self, TOKEN_STAR);
         case '!':
-            return make_token(self,
-                              match(self, '=') ? TOKEN_BANG_EQUAL : TOKEN_BANG);
+            return make_token(self, match(self, '=') ? TOKEN_BANG_EQUAL : TOKEN_BANG);
         case '=':
-            return make_token(
-                self, match(self, '=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL);
+            return make_token(self, match(self, '=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL);
         case '<':
-            return make_token(self,
-                              match(self, '=') ? TOKEN_LESS_EQUAL : TOKEN_LESS);
+            return make_token(self, match(self, '=') ? TOKEN_LESS_EQUAL : TOKEN_LESS);
         case '>':
-            return make_token(
-                self, match(self, '=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER);
+            return make_token(self,
+                              match(self, '=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER);
         case '"': return string(self);
         default: error_token(self, "Unexpected character.");
     }

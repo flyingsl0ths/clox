@@ -22,15 +22,9 @@ struct obj_string_t
     uint32_t    hash;
 };
 
-obj_string_t*               copy_string(str             chars,
-                                        const usize     length,
-                                        object_t* const objects,
-                                        table_t* const  strings);
+obj_string_t* copy_string(str chars, usize length, object_t* objects, table_t* strings);
 
-obj_string_t*               take_string(char*           chars,
-                                        const usize     length,
-                                        object_t* const objects,
-                                        table_t* const  strings);
+obj_string_t* take_string(char* chars, usize length, object_t* objects, table_t* strings);
 
 static inline object_type_t object_type(const value_t value)
 {
@@ -58,13 +52,11 @@ static inline const char* as_c_str(const value_t value)
     return ((obj_string_t*)as_obj(value))->chars;
 }
 
-void          print_object(const value_t value);
+void print_object(value_t value);
 
-s32           string_cmp(const value_t left, const value_t right);
+s32  string_cmp(value_t left, value_t right);
 
-obj_string_t* strings_add(const value_t   left,
-                          const value_t   right,
-                          object_t* const objects,
-                          table_t* const  strings);
+obj_string_t*
+     strings_add(value_t left, value_t right, object_t* objects, table_t* strings);
 
-void          free_object(object_t* const object);
+void free_object(object_t* object);

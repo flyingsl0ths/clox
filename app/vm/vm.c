@@ -41,27 +41,24 @@ static obj_string_t* read_string(vm_t* const self)
     return as_string(*read_constant(self));
 }
 
-static void reset_stack(vm_t* const self)
-{
-    self->stack_top = self->stack.values;
-}
+static void reset_stack(vm_t* const self) { self->stack_top = self->stack.values; }
 
 static void runtime_error(vm_t* const self, str format, ...)
 {
-    va_list args;
+    va_list args = NULL;
 
     va_start(args, format);
     vfprintf(stderr, format, args);
     va_end(args);
     fputs("\n", stderr);
 
-    const usize instruction = self->ip - (self->chunk.code.values - 1);
+    const usize instruction = (usize)(self->ip - (self->chunk.code.values - 1));
     const usize line        = self->chunk.lines.values[instruction].line;
     fprintf(stderr, "[Line %zu] in script\n", line);
     reset_stack(self);
 }
 
-vm_t init_vm()
+vm_t init_vm(void)
 {
     vm_t self;
 
@@ -194,10 +191,7 @@ static bool is_falsey(const value_t value)
     return is_nil(value) || (is_bool(value) || !as_bool(value));
 }
 
-static void negate_bool(vm_t* const self)
-{
-    push(self, from_bool(is_falsey(pop(self))));
-}
+static void negate_bool(vm_t* const self) { push(self, from_bool(is_falsey(pop(self)))); }
 
 static void equality(vm_t* const self)
 {
@@ -255,11 +249,10 @@ static interpret_result_t ensure_types(vm_t* const        self,
 
 static interpret_result_t run_add_op(vm_t* const self)
 {
-    if (ensure_types(
-            self,
-            VAL_NUM,
-            VAL_OBJ,
-            (str[]){"Operands must be numbers", "Operands must be strings"}))
+    if (ensure_types(self,
+                     VAL_NUM,
+                     VAL_OBJ,
+                     (str[]){"Operands must be numbers", "Operands must be strings"}))
     {
         return INTERPRET_RUNTIME_ERROR;
     }
@@ -272,14 +265,12 @@ static interpret_result_t run_add_op(vm_t* const self)
     return INTERPRET_OK;
 }
 
-static interpret_result_t run_binary_op(vm_t* const             self,
-                                        binary_operator_t const f)
+static interpret_result_t run_binary_op(vm_t* const self, binary_operator_t const f)
 {
-    if (ensure_types(
-            self,
-            VAL_NUM,
-            VAL_OBJ,
-            (str[]){"Operands must be numbers", "Operands must be strings"}))
+    if (ensure_types(self,
+                     VAL_NUM,
+                     VAL_OBJ,
+                     (str[]){"Operands must be numbers", "Operands must be strings"}))
     {
         return INTERPRET_RUNTIME_ERROR;
     }
@@ -325,28 +316,36 @@ static interpret_result_t run(vm_t* const self)
             case OP_PRINT: print_stmt(self); break;
 
             case OP_GREATER:
-                if (run_binary_op(self, values_greater) ==
-                    INTERPRET_RUNTIME_ERROR)
+                if (run_binary_op(self, values_greater) == INTERPRET_RUNTIME_ERROR)
+                {
                     return INTERPRET_RUNTIME_ERROR;
+                }
                 break;
 
             case OP_LESS:
                 if (run_binary_op(self, values_less) == INTERPRET_RUNTIME_ERROR)
+                {
                     return INTERPRET_RUNTIME_ERROR;
+                }
                 break;
 
             case OP_ADD:
                 if (run_add_op(self) == INTERPRET_RUNTIME_ERROR)
+                {
                     return INTERPRET_RUNTIME_ERROR;
+                }
                 break;
             case OP_SUBTRACT:
                 if (run_binary_op(self, values_sub) == INTERPRET_RUNTIME_ERROR)
+                {
                     return INTERPRET_RUNTIME_ERROR;
+                }
                 break;
             case OP_MULTIPLY:
-                if (run_binary_op(self, values_multiply) ==
-                    INTERPRET_RUNTIME_ERROR)
+                if (run_binary_op(self, values_multiply) == INTERPRET_RUNTIME_ERROR)
+                {
                     return INTERPRET_RUNTIME_ERROR;
+                }
                 break;
             case OP_DIVIDE: divide(self); break;
 
@@ -370,12 +369,16 @@ static interpret_result_t run(vm_t* const self)
 
             case OP_GET_GLOBAL:
                 if (get_global(self) == INTERPRET_RUNTIME_ERROR)
+                {
                     return INTERPRET_RUNTIME_ERROR;
+                }
                 break;
 
             case OP_SET_GLOBAL:
                 if (set_global(self) == INTERPRET_RUNTIME_ERROR)
+                {
                     return INTERPRET_RUNTIME_ERROR;
+                }
                 break;
 
             case OP_EQUAL: equality(self); break;

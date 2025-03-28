@@ -2,7 +2,7 @@
 
 #include <common.h>
 
-typedef enum : u32
+typedef enum
 {
     // Single-character tokens.
     TOKEN_LEFT_PAREN,

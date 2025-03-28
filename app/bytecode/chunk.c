@@ -39,15 +39,13 @@ void write_chunk(chunk_t* const self, const u8 data, const u32 line)
 
         self->code.capacity      = grow_capacity(old_capacity);
 
-        self->code.values =
-            GROW_ARRAY(u8, self->code.values, self->code.capacity);
+        self->code.values        = GROW_ARRAY(u8, self->code.values, self->code.capacity);
     }
 
     self->code.values[self->code.count] = data;
     ++self->code.count;
 
-    if (self->lines.count > 0 &&
-        self->lines.values[self->lines.count - 1].line == line)
+    if (self->lines.count > 0 && self->lines.values[self->lines.count - 1].line == line)
     {
         return;
     }

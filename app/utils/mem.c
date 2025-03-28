@@ -17,7 +17,7 @@ void* reallocate(void* const source, const usize new_size)
 
     void* const result = realloc(source, new_size);
 
-    if (!result) { exit(EXIT_FAILURE); }
+    if (!result) { return NULL; }
 
     return result;
 }
